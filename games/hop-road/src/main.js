@@ -2,7 +2,7 @@
 import { Game } from './game.js';
 import { render } from './renderer.js';
 import { bindInput } from './input.js';
-import { setupShare } from './share.js';
+import { setupShare } from '../../../common/share.js';
 import { COLS } from './config.js';
 
 const $ = (id) => document.getElementById(id);

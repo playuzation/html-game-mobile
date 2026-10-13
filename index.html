@@ -2,45 +2,40 @@
 <html lang="ko">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-  <meta name="theme-color" content="#8fd765">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="mobile-web-app-capable" content="yes">
-  <title>Hop Road</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1d1b33">
+  <title>Mini Game Arcade</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-    html, body {
-      height: 100%; overflow: hidden; background: #2b2f36;
-      font-family: system-ui, -apple-system, "Apple SD Gothic Neo", sans-serif;
-      user-select: none; -webkit-user-select: none; touch-action: none; overscroll-behavior: none;
+    body {
+      min-height: 100dvh; background: radial-gradient(circle at 50% -10%, #3b3577, #1d1b33 60%);
+      color: #fff; font-family: system-ui, -apple-system, "Apple SD Gothic Neo", sans-serif;
+      padding: calc(env(safe-area-inset-top) + 32px) 16px calc(env(safe-area-inset-bottom) + 32px);
     }
-    #wrap { position: relative; height: 100dvh; max-width: 520px; margin: 0 auto; }
-    #game { display: block; width: 100%; height: 100%; touch-action: none; }
-    .hud {
-      position: absolute; top: calc(env(safe-area-inset-top) + 10px); left: 14px; right: 14px;
-      display: flex; justify-content: space-between; align-items: flex-start;
-      color: #fff; font-weight: 800; text-shadow: 0 2px 0 rgba(0,0,0,.35); pointer-events: none;
+    main { max-width: 520px; margin: 0 auto; }
+    header { text-align: center; margin-bottom: 28px; }
+    header .logo { font-size: 48px; }
+    header h1 { font-size: 30px; font-weight: 900; letter-spacing: 1px; margin-top: 6px; }
+    header p { opacity: .7; margin-top: 6px; font-size: 14px; }
+    #list { display: flex; flex-direction: column; gap: 14px; }
+    .card {
+      display: flex; align-items: center; gap: 14px; padding: 16px; border-radius: 18px;
+      background: rgba(255,255,255,.08); border: 2px solid rgba(255,255,255,.08);
+      color: inherit; text-decoration: none; transition: transform .12s, border-color .12s;
     }
-    #score { font-size: 44px; line-height: 1; }
-    #best { font-size: 16px; opacity: .9; margin-top: 6px; }
-    .overlay {
-      position: absolute; inset: 0; display: flex; flex-direction: column;
-      align-items: center; justify-content: center; gap: 14px; color: #fff; text-align: center;
-      text-shadow: 0 2px 0 rgba(0,0,0,.35);
+    .card:active { transform: scale(.98); }
+    .card:hover { border-color: var(--accent); }
+    .icon {
+      flex: none; width: 64px; height: 64px; border-radius: 16px; display: grid; place-items: center;
+      font-size: 36px; background: var(--accent); box-shadow: 0 4px 0 rgba(0,0,0,.3);
     }
-    .overlay[hidden] { display: none; }
-    #start { pointer-events: none; justify-content: flex-start; padding-top: 24vh; }
-    #start h1 { font-size: 40px; letter-spacing: 1px; }
-    #start p { font-size: 16px; line-height: 1.6; opacity: .95; }
-    #over { background: rgba(0,0,0,.45); }
-    #over h2 { font-size: 28px; }
-    #final { font-size: 64px; font-weight: 900; }
-    #retry {
-      margin-top: 8px; padding: 14px 40px; border: 0; border-radius: 14px;
-      background: #ffb627; color: #3a2a00; font-size: 20px; font-weight: 800;
-      box-shadow: 0 5px 0 #c98a00; touch-action: manipulation; cursor: pointer;
-    }
-    #retry:active { transform: translateY(3px); box-shadow: 0 2px 0 #c98a00; }
+    .body { flex: 1; min-width: 0; }
+    .body h2 { font-size: 19px; font-weight: 800; }
+    .body p { font-size: 13px; opacity: .8; margin-top: 4px; line-height: 1.45; }
+    .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .tags span { font-size: 11px; padding: 3px 8px; border-radius: 999px; background: rgba(255,255,255,.12); }
+    .go { flex: none; font-size: 18px; color: var(--accent); }
+    footer { text-align: center; opacity: .5; font-size: 12px; margin-top: 28px; }
     #share {
       position: fixed; right: 20px; bottom: 20px; width: 220px; padding: 16px;
       background: #fff; color: #222; border-radius: 14px; text-align: center;
@@ -53,24 +48,20 @@
   </style>
 </head>
 <body>
-  <div id="wrap">
-    <canvas id="game"></canvas>
-    <div class="hud"><div id="score">0</div><div id="best">BEST 0</div></div>
-    <div id="start" class="overlay">
-      <h1>HOP ROAD</h1>
-      <p>탭 = 앞으로 · 스와이프 = 방향 이동<br>차를 피하고 통나무를 타세요!</p>
-    </div>
-    <div id="over" class="overlay" hidden>
-      <h2>GAME OVER</h2>
-      <div id="final">0</div>
-      <button id="retry" type="button">다시하기</button>
-    </div>
-  </div>
+  <main>
+    <header>
+      <div class="logo">🕹️</div>
+      <h1>MINI ARCADE</h1>
+      <p>플레이할 게임을 고르세요 · <span id="count">0</span>개</p>
+    </header>
+    <nav id="list"></nav>
+    <footer>새 게임은 계속 추가됩니다</footer>
+  </main>
   <aside id="share" hidden>
     <strong>📱 휴대폰으로 플레이</strong><br>카메라로 QR을 스캔하세요
     <img id="qr" alt="이 페이지 QR 코드">
     <a id="share-url" target="_blank" rel="noopener"></a>
   </aside>
-  <script type="module" src="src/main.js"></script>
+  <script type="module" src="title.js"></script>
 </body>
 </html>

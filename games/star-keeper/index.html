@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0b0a14">
+  <title>Star Keeper Lumi</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      height: 100%; overflow: hidden; background: #0b0a14; color: #fff;
+      font-family: system-ui, -apple-system, "Apple SD Gothic Neo", sans-serif;
+      user-select: none; -webkit-user-select: none; touch-action: none; overscroll-behavior: none;
+    }
+    #game { position: fixed; inset: 0; display: block; }
+
+    #hud {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 2;
+      padding: calc(env(safe-area-inset-top) + 8px) 12px 6px;
+      display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px;
+      background: linear-gradient(#0b0a14, rgba(11,10,20,.7));
+    }
+    #hud a, #toggle {
+      display: grid; place-items: center; height: 34px; min-width: 34px; padding: 0 10px; border-radius: 10px;
+      background: rgba(255,255,255,.1); color: #fff; text-decoration: none; font-size: 14px; font-weight: 700;
+      border: 1px solid rgba(255,255,255,.15); cursor: pointer;
+    }
+    #toggle { font-size: 18px; }
+    #toggle.on { background: #7c6cf0; border-color: #a99bff; }
+    .mid { min-width: 0; text-align: center; }
+    #room { font-size: 14px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .stats { display: flex; justify-content: center; gap: 10px; font-size: 12px; opacity: .9; margin-top: 2px; flex-wrap: wrap; }
+    #map { display: inline-flex; gap: 3px; align-items: center; }
+    #map i { width: 8px; height: 8px; border-radius: 2px; background: rgba(255,255,255,.25); }
+    #map i.here { background: #ffe27a; }
+
+    #msg {
+      position: fixed; left: 50%; transform: translateX(-50%); z-index: 2; width: calc(100% - 32px);
+      padding: 8px 12px; border-radius: 10px; background: rgba(10,8,25,.82); border: 1px solid rgba(255,255,255,.18);
+      font-size: 13px; line-height: 1.5; text-align: center; pointer-events: none;
+    }
+    #msg[hidden] { display: none; }
+
+    /* 조작키: 세로 화면에서는 하단 패널, 가로 화면에서는 양쪽 아래에 겹쳐 표시 */
+    #controls {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 3; height: 210px;
+      padding: 0 24px calc(env(safe-area-inset-bottom) + 18px);
+      display: flex; justify-content: space-between; align-items: flex-end; pointer-events: none;
+    }
+    #controls[hidden] { display: none; }
+    @media (orientation: portrait) { #controls { background: #15132a; border-top: 1px solid rgba(255,255,255,.08); } }
+    #dpad {
+      position: relative; width: 156px; height: 156px; pointer-events: auto; touch-action: none;
+    }
+    #dpad b {
+      position: absolute; width: 52px; height: 52px; display: grid; place-items: center;
+      background: #2b2850; border: 2px solid #4a4580; border-radius: 10px; font-size: 20px; color: #cfc8ff;
+    }
+    #dpad .u { left: 52px; top: 0; }
+    #dpad .d { left: 52px; bottom: 0; }
+    #dpad .l { left: 0; top: 52px; }
+    #dpad .r { right: 0; top: 52px; }
+    #dpad::after {
+      content: ''; position: absolute; left: 52px; top: 52px; width: 52px; height: 52px; background: #2b2850;
+    }
+    #dpad.up .u, #dpad.down .d, #dpad.left .l, #dpad.right .r { background: #7c6cf0; color: #fff; }
+    .ab { position: relative; width: 156px; height: 140px; pointer-events: none; }
+    .ab button {
+      position: absolute; width: 68px; height: 68px; border-radius: 50%; border: 0; pointer-events: auto;
+      font-size: 22px; font-weight: 900; color: #fff; touch-action: none; box-shadow: 0 5px 0 rgba(0,0,0,.35);
+    }
+    .ab button.on { transform: translateY(3px); box-shadow: 0 2px 0 rgba(0,0,0,.35); filter: brightness(1.2); }
+    .ab button small { display: block; font-size: 10px; font-weight: 700; opacity: .85; }
+    #btn-a { right: 0; top: 0; background: #e8505b; }
+    #btn-b { left: 0; bottom: 0; background: #3f8cff; }
+
+    #end {
+      position: fixed; inset: 0; z-index: 5; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 14px; background: rgba(8,6,20,.85); text-align: center; padding: 24px;
+    }
+    #end[hidden] { display: none; }
+    #end h2 { font-size: 26px; }
+    #end p { line-height: 1.7; opacity: .9; }
+    #end .btns { display: flex; gap: 10px; margin-top: 8px; }
+    #end button, #end a {
+      padding: 12px 22px; border-radius: 12px; border: 0; font-size: 16px; font-weight: 800;
+      background: #ffe27a; color: #3a2a00; text-decoration: none; cursor: pointer;
+    }
+    #end a { background: rgba(255,255,255,.15); color: #fff; }
+  </style>
+</head>
+<body>
+  <canvas id="game"></canvas>
+
+  <header id="hud">
+    <a href="../../" aria-label="타이틀로">←</a>
+    <div class="mid">
+      <div id="room"></div>
+      <div class="stats"><span id="moves"></span><span id="stars"></span><span id="tools"></span><span id="map"></span></div>
+    </div>
+    <button id="toggle" type="button" aria-label="조작키 표시" aria-pressed="false">🎮</button>
+  </header>
+
+  <div id="msg" hidden></div>
+
+  <div id="controls" hidden>
+    <div id="dpad" aria-label="십자키"><b class="u">▲</b><b class="l">◀</b><b class="r">▶</b><b class="d">▼</b></div>
+    <div class="ab">
+      <button id="btn-b" type="button">B<small>도구</small></button>
+      <button id="btn-a" type="button">A<small>점프</small></button>
+    </div>
+  </div>
+
+  <div id="end" hidden>
+    <div style="font-size:56px">🌟</div>
+    <h2>별의 제단에 빛이 돌아왔다!</h2>
+    <p id="end-stats"></p>
+    <div class="btns">
+      <button id="retry" type="button">다시하기</button>
+      <a href="../../">타이틀로</a>
+    </div>
+  </div>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
