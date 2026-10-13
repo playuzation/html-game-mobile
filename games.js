@@ -16,4 +16,12 @@ export const GAMES = [
     color: '#7c6cf0',
     tags: ['메트로배니아', '십자키 · A/B'],
   },
+  {
+    id: 'one-card',
+    title: '원카드',
+    desc: '컴퓨터 1~3명과 겨루는 트럼프 카드 원카드. 공격 카드와 원카드 외치기!',
+    icon: '🃏',
+    color: '#1f7a4d',
+    tags: ['카드', 'AI 대전'],
+  },
 ];

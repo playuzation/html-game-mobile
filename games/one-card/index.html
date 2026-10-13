@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0f5132">
+  <title>One Card</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body { height: 100%; overflow: hidden; }
+    body {
+      background: radial-gradient(ellipse at 50% 45%, #1f7a4d, #0f4a2e 70%, #0a3320);
+      color: #fff; font-family: system-ui, -apple-system, "Apple SD Gothic Neo", sans-serif;
+      user-select: none; -webkit-user-select: none; touch-action: manipulation;
+      display: flex; flex-direction: column; height: 100dvh;
+      padding: calc(env(safe-area-inset-top) + 8px) 0 calc(env(safe-area-inset-bottom) + 8px);
+    }
+    button { font: inherit; cursor: pointer; }
+    .bar { display: flex; align-items: center; justify-content: space-between; padding: 0 12px; }
+    .bar a {
+      height: 34px; min-width: 34px; display: grid; place-items: center; padding: 0 10px; border-radius: 10px;
+      background: rgba(0,0,0,.25); color: #fff; text-decoration: none; font-weight: 700;
+    }
+    .bar h1 { font-size: 16px; font-weight: 800; letter-spacing: 1px; }
+    #restart { height: 34px; padding: 0 12px; border-radius: 10px; border: 0; background: rgba(0,0,0,.25); color: #fff; font-weight: 700; }
+
+    #opps { display: flex; justify-content: center; gap: 8px; padding: 10px 8px 0; }
+    .opp {
+      flex: 1; max-width: 140px; padding: 8px 6px; border-radius: 14px; text-align: center;
+      background: rgba(0,0,0,.2); border: 2px solid transparent; transition: border-color .2s, transform .2s;
+    }
+    .opp.turn { border-color: #ffd54a; transform: translateY(2px); box-shadow: 0 0 16px rgba(255,213,74,.35); }
+    .opp.out { opacity: .4; }
+    .avatar { font-size: 26px; }
+    .name { font-size: 13px; font-weight: 800; }
+    .backs { display: flex; justify-content: center; height: 22px; margin: 4px 0 2px; }
+    .backs i {
+      width: 14px; height: 20px; margin-left: -8px; border-radius: 3px; border: 1px solid #fff;
+      background: repeating-linear-gradient(45deg, #b3262e 0 3px, #8e1c23 3px 6px);
+    }
+    .backs i:first-child { margin-left: 0; }
+    .cnt { font-size: 12px; opacity: .9; }
+
+    #table { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; min-height: 0; }
+    .center { display: flex; align-items: center; gap: 22px; }
+    #deck {
+      position: relative; width: 74px; height: 104px; border-radius: 10px; border: 3px solid #fff;
+      background: repeating-linear-gradient(45deg, #b3262e 0 6px, #8e1c23 6px 12px);
+      box-shadow: 3px 3px 0 #e8e8e8, 6px 6px 0 #cfcfcf; display: grid; place-items: center;
+    }
+    #deck.active { animation: glow 1.2s infinite; }
+    @keyframes glow { 50% { box-shadow: 3px 3px 0 #e8e8e8, 6px 6px 0 #cfcfcf, 0 0 18px 6px rgba(255,213,74,.7); } }
+    #deck-count { background: rgba(0,0,0,.55); border-radius: 999px; padding: 2px 8px; font-size: 13px; font-weight: 800; }
+    #pile .card { width: 84px; height: 118px; animation: pop .25s; }
+    @keyframes pop { from { transform: scale(1.25) rotate(-6deg); } }
+    #pile .card .big { font-size: 46px; }
+    #dir { font-size: 26px; opacity: .8; }
+    #chips { display: flex; gap: 6px; min-height: 26px; }
+    .chip { padding: 4px 10px; border-radius: 999px; background: #fff; color: #111; font-weight: 800; font-size: 13px; }
+    .chip.red { color: #d32f2f; }
+    .chip.atk { background: #e53935; color: #fff; animation: shake .4s; }
+    @keyframes shake { 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
+    #log { font-size: 13px; opacity: .9; min-height: 18px; text-align: center; padding: 0 16px; }
+
+    #me { margin: 0 8px; padding: 8px 0 4px; border-radius: 16px; background: rgba(0,0,0,.18); border: 2px solid transparent; }
+    #me.turn { border-color: #ffd54a; }
+    .me-head { display: flex; justify-content: space-between; padding: 0 12px 6px; font-size: 13px; }
+    #status { font-weight: 700; }
+    #hand { display: flex; justify-content: center; padding: 14px 8px 6px; min-height: 120px; }
+    #hand .card + .card { margin-left: var(--gap, 4px); }
+
+    .card {
+      position: relative; flex: none; width: 62px; height: 90px; border-radius: 8px; background: #fff; color: #1a1a1a;
+      box-shadow: 0 2px 6px rgba(0,0,0,.35); transition: transform .15s, filter .15s;
+    }
+    .card.red { color: #d32f2f; }
+    .card .rk { position: absolute; left: 5px; top: 4px; font-size: 14px; font-weight: 800; line-height: 1.05; text-align: center; }
+    .card .big { position: absolute; inset: 0; display: grid; place-items: center; font-size: 30px; padding-top: 10px; }
+    .card.joker .rk { font-size: 9px; letter-spacing: .5px; }
+    .card.joker { background: linear-gradient(160deg, #fff, #f1f1f1); }
+    .card.joker.red { background: linear-gradient(160deg, #fff4e5, #ffe0ec); }
+    #hand .card.legal { z-index: 1; transform: translateY(-12px); box-shadow: 0 0 0 3px #ffd54a, 0 6px 12px rgba(0,0,0,.4); cursor: pointer; }
+    #hand .card.dim { filter: brightness(.6); }
+
+    #one {
+      position: fixed; right: 16px; bottom: calc(env(safe-area-inset-bottom) + 170px); z-index: 4;
+      width: 92px; height: 92px; border-radius: 50%; border: 4px solid #fff; background: #ff9800; color: #fff;
+      font-size: 17px; font-weight: 900; box-shadow: 0 6px 0 #b56b00; animation: pulse .6s infinite alternate;
+    }
+    #one.mine { background: #e53935; box-shadow: 0 6px 0 #9a1f1c; }
+    #one small { display: block; font-size: 10px; font-weight: 700; }
+    #one[hidden] { display: none; }
+    @keyframes pulse { to { transform: scale(1.08); } }
+
+    #toast {
+      position: fixed; left: 50%; top: 42%; transform: translateX(-50%); z-index: 6; padding: 12px 18px;
+      border-radius: 14px; background: rgba(0,0,0,.8); font-size: 18px; font-weight: 800; pointer-events: none;
+    }
+    #toast[hidden] { display: none; }
+
+    .modal {
+      position: fixed; inset: 0; z-index: 5; display: flex; align-items: center; justify-content: center;
+      background: rgba(5,25,15,.82); padding: 16px;
+    }
+    .modal[hidden] { display: none; }
+    .panel { width: 100%; max-width: 380px; background: #fff; color: #1a1a1a; border-radius: 20px; padding: 22px 18px; text-align: center; }
+    .panel h2 { font-size: 22px; }
+    .panel .sub { font-size: 13px; color: #555; margin-top: 4px; }
+    .opt { margin-top: 16px; text-align: left; }
+    .opt label { font-size: 13px; font-weight: 800; color: #444; }
+    .seg { display: flex; gap: 6px; margin-top: 6px; }
+    .seg button { flex: 1; padding: 10px 0; border-radius: 10px; border: 2px solid #ddd; background: #fafafa; font-weight: 800; color: #333; }
+    .seg button.on { border-color: #1f7a4d; background: #e7f6ee; color: #145c38; }
+    details { margin-top: 14px; text-align: left; font-size: 13px; line-height: 1.6; color: #333; }
+    summary { font-weight: 800; cursor: pointer; }
+    .go { margin-top: 18px; width: 100%; padding: 14px; border: 0; border-radius: 14px; background: #1f7a4d; color: #fff; font-size: 18px; font-weight: 900; }
+    .ghost { display: block; margin-top: 10px; color: #1f7a4d; font-weight: 800; text-decoration: none; }
+    #suits { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+    #suits button { padding: 14px 0; border-radius: 14px; border: 2px solid #ddd; background: #fafafa; font-size: 34px; color: #1a1a1a; }
+    #suits button.red { color: #d32f2f; }
+    #suits button.rec { border-color: #1f7a4d; }
+    #suits small { display: block; font-size: 12px; color: #555; }
+    #suit-cancel { margin-top: 12px; border: 0; background: none; color: #777; font-weight: 700; }
+    #res-icon { font-size: 60px; }
+  </style>
+</head>
+<body>
+  <div class="bar">
+    <a href="../../" aria-label="타이틀로">←</a>
+    <h1>🃏 원카드</h1>
+    <button id="restart" type="button">새 게임</button>
+  </div>
+
+  <div id="opps"></div>
+
+  <div id="table">
+    <div class="center">
+      <button id="deck" type="button" aria-label="카드 뽑기"><span id="deck-count">0</span></button>
+      <div id="pile"></div>
+      <div id="dir">⟳</div>
+    </div>
+    <div id="chips"></div>
+    <div id="log"></div>
+  </div>
+
+  <section id="me">
+    <div class="me-head"><span id="status"></span><span id="me-cnt"></span></div>
+    <div id="hand"></div>
+  </section>
+
+  <button id="one" type="button" hidden>원카드!<small></small></button>
+  <div id="toast" hidden></div>
+
+  <div id="setup" class="modal">
+    <div class="panel">
+      <h2>🃏 원카드</h2>
+      <p class="sub">컴퓨터와 대결! 먼저 카드를 모두 내면 승리</p>
+      <div class="opt">
+        <label>상대 수</label>
+        <div class="seg" id="opt-count">
+          <button type="button" data-v="1">1명</button>
+          <button type="button" data-v="2" class="on">2명</button>
+          <button type="button" data-v="3">3명</button>
+        </div>
+      </div>
+      <div class="opt">
+        <label>난이도</label>
+        <div class="seg" id="opt-level">
+          <button type="button" data-v="easy">쉬움</button>
+          <button type="button" data-v="normal" class="on">보통</button>
+        </div>
+      </div>
+      <details>
+        <summary>규칙 보기</summary>
+        · 맨 위 카드와 <b>같은 무늬나 숫자</b>를 냅니다. 조커는 언제나 낼 수 있어요.<br>
+        · 낼 카드가 없으면 덱에서 1장 뽑습니다.<br>
+        · <b>공격</b>: A +3 (♠A +5) · 2 +2 · 흑백 조커 +5 · 컬러 조커 +7<br>
+        &nbsp;&nbsp;공격은 같은 무늬/숫자의 공격 카드나 조커로 막아 누적시킬 수 있고, 못 막으면 그만큼 뽑습니다.<br>
+        · <b>J</b> 다음 사람 건너뛰기 · <b>Q</b> 방향 바꾸기 · <b>K</b> 한 장 더 · <b>7</b> 무늬 바꾸기<br>
+        · 카드가 1장 남으면 <b>원카드!</b> 버튼을 3초 안에 누르세요. 상대가 1장일 때 먼저 누르면 상대가 1장 받습니다.<br>
+        · 손패가 20장이 되면 파산(패배)입니다.
+      </details>
+      <button id="start" class="go" type="button">게임 시작</button>
+      <a class="ghost" href="../../">타이틀로</a>
+    </div>
+  </div>
+
+  <div id="suit-pick" class="modal" hidden>
+    <div class="panel">
+      <h2>무늬를 고르세요</h2>
+      <p class="sub">초록 테두리는 가장 많이 가진 무늬예요</p>
+      <div id="suits"></div>
+      <button id="suit-cancel" type="button">취소</button>
+    </div>
+  </div>
+
+  <div id="result" class="modal" hidden>
+    <div class="panel">
+      <div id="res-icon"></div>
+      <h2 id="res-title"></h2>
+      <p class="sub" id="res-sub"></p>
+      <button id="again" class="go" type="button">다시 하기</button>
+      <a class="ghost" href="../../">타이틀로</a>
+    </div>
+  </div>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
