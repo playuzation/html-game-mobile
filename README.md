@@ -129,6 +129,25 @@ games/
    │  ├─ ai.js           컴퓨터 판단
    │  └─ (board.js 윷판·이동, yut.js 윷가락 — 리프)
    └─ tools/simulate.mjs       대량 대전 검증
+├─ world-marble/
+   ├─ index.html
+   ├─ src/main.js        루트: 보드·사람 입력·컴퓨터 차례·이동 애니메이션
+   │  ├─ game.js         진행 상태 (UI 없이 동작)
+   │  ├─ ai.js           컴퓨터 판단
+   │  └─ (board.js 칸·금액 규칙, cards.js 황금열쇠 — 리프)
+   └─ tools/simulate.mjs       대량 대전 검증
+└─ dungeon-dive/
+   ├─ index.html
+   ├─ src/main.js        루트: 화면 배치·루프·HUD·조작키·강화 선택/결과
+   │  ├─ game.js         런 진행: 층·전투·줍기·강화·죽음/클리어
+   │  │  ├─ player.js    플레이어 물리·공격 ─┐
+   │  │  ├─ entities.js  적·투사체 ─────────┼─ physics.js 타일 충돌
+   │  │  ├─ level.js     층 생성·도달 검사 ←─┘  (chunks.js 조각 템플릿)
+   │  │  └─ upgrades.js  강화 목록 (리프)
+   │  ├─ renderer.js     캔버스 그리기
+   │  └─ input.js        키보드 + 화면 십자키/A·B
+   │  (config.js 상수, rng.js 시드 난수 — 리프)
+   └─ tools/verify-levels.mjs  층 도달 가능성 검증
 ```
 
 각 게임은 자기 폴더 안에서만 import 하며, 공용으로는 `common/` 리프 모듈만 참조합니다 (순환 참조 없음).
