@@ -61,6 +61,18 @@ node games/star-keeper/tools/verify-route.mjs
 node games/one-card/tools/simulate.mjs 5000   # AI끼리 대전: 카드 보존·규칙 위반·교착 검사
 ```
 
+### 🎋 윷놀이
+컴퓨터 1~3명(난이도 쉬움/보통)과 겨루는 윷놀이. 말 4개를 먼저 모두 완주시키면 승리.
+
+- 도 1 · 개 2 · 걸 3 · 윷 4 · 모 5 · 빽도 -1 (표시된 가락 하나만 배가 나올 때)
+- 윷·모 또는 잡기 → 한 번 더. 나온 결과는 원하는 순서로 말에 나눠 쓰기
+- 모서리(모·뒷모)·방에 멈추면 지름길, 내 말 위로 가면 업기, 상대 말 위로 가면 잡기
+- 참먹이(출발점)에 도착하거나 지나가면 완주
+
+```
+node games/yut/tools/simulate.mjs 5000   # AI끼리 대전: 말 보존·칸 충돌·교착 검사
+```
+
 ## 구조
 
 ```
@@ -79,12 +91,19 @@ games/
    │  └─ input.js        키보드 + 화면 십자키/A·B
    │  (rooms.js 레벨 데이터, config.js 물리 상수 — 아무것도 import 하지 않는 리프)
    └─ tools/verify-route.mjs   31회 최소 경로 검증
-└─ one-card/
+├─ one-card/
    ├─ index.html
    ├─ src/main.js        루트: 화면·사람 입력·컴퓨터 차례·원카드 타이머
    │  ├─ game.js         진행 상태 (UI 없이 동작)
    │  ├─ ai.js           컴퓨터 판단
    │  └─ (rules.js 규칙 → cards.js 카드 정의 리프)
+   └─ tools/simulate.mjs       대량 대전 검증
+└─ yut/
+   ├─ index.html
+   ├─ src/main.js        루트: 윷판(SVG)·사람 입력·컴퓨터 차례
+   │  ├─ game.js         진행 상태 (UI 없이 동작)
+   │  ├─ ai.js           컴퓨터 판단
+   │  └─ (board.js 윷판·이동, yut.js 윷가락 — 리프)
    └─ tools/simulate.mjs       대량 대전 검증
 ```
 

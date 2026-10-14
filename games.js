@@ -24,4 +24,12 @@ export const GAMES = [
     color: '#1f7a4d',
     tags: ['카드', 'AI 대전'],
   },
+  {
+    id: 'yut',
+    title: '윷놀이',
+    desc: '윷을 던져 말 4개를 먼저 완주시키자! 업기·잡기·지름길까지 담은 전통 놀이',
+    icon: '🎋',
+    color: '#c0392b',
+    tags: ['보드게임', 'AI 대전'],
+  },
 ];

@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#f3e2c3">
+  <title>Yut Nori</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body { height: 100%; overflow: hidden; }
+    body {
+      background: #f3e2c3; color: #3b2a1a; font-family: system-ui, -apple-system, "Apple SD Gothic Neo", sans-serif;
+      user-select: none; -webkit-user-select: none; touch-action: manipulation;
+      display: flex; flex-direction: column; height: 100dvh;
+      padding: calc(env(safe-area-inset-top) + 8px) 0 calc(env(safe-area-inset-bottom) + 8px);
+    }
+    button { font: inherit; cursor: pointer; }
+    .bar { display: flex; align-items: center; justify-content: space-between; padding: 0 12px; }
+    .bar a, #restart {
+      height: 34px; min-width: 34px; display: grid; place-items: center; padding: 0 12px; border-radius: 10px; border: 0;
+      background: rgba(59,42,26,.1); color: #3b2a1a; text-decoration: none; font-weight: 800;
+    }
+    .bar h1 { font-size: 17px; font-weight: 900; letter-spacing: 1px; }
+
+    #players { display: flex; gap: 6px; padding: 10px 10px 0; }
+    .pl { flex: 1; padding: 6px; border-radius: 12px; background: rgba(255,255,255,.55); border: 2px solid transparent; text-align: center; }
+    .pl.turn { border-color: #c0392b; background: #fff; }
+    .nm { font-size: 13px; font-weight: 800; white-space: nowrap; }
+    .tk { display: flex; justify-content: center; gap: 3px; margin-top: 4px; }
+    .tk i { width: 12px; height: 12px; border-radius: 50%; background: var(--c); }
+    .tk i.wait { opacity: .35; }
+    .tk i.done { box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px var(--c); }
+    .tk i.on { outline: 2px dashed var(--c); outline-offset: 1px; background: transparent; }
+
+    #boardwrap { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 8px; }
+    #board { width: min(100%, 100vh - 330px, 520px); aspect-ratio: 1; min-width: 220px; }
+    #board .bg { fill: #e9c995; stroke: #8b5a2b; stroke-width: 1.2; }
+    .ln { stroke: #8b5a2b; stroke-width: .8; }
+    .nd { fill: #fff8ea; stroke: #8b5a2b; stroke-width: .7; }
+    .nd.big { fill: #fff3d6; stroke-width: 1; }
+    .lbl { font-size: 3.2px; fill: #8b5a2b; font-weight: 700; text-anchor: middle; }
+    .pc { cursor: default; }
+    .pc.opp { pointer-events: none; }
+    .pc circle:first-child { stroke: #fff; stroke-width: 1; }
+    .pc.can { cursor: pointer; animation: bob .7s infinite alternate; }
+    .pc.can circle:first-child { stroke: #ffd54a; stroke-width: 1.6; }
+    @keyframes bob { to { transform: translateY(-1.2px); } }
+    .ic { font-size: 5.6px; text-anchor: middle; pointer-events: none; }
+    .bd { fill: #3b2a1a; }
+    .bdt { font-size: 3.6px; fill: #fff; font-weight: 900; text-anchor: middle; pointer-events: none; }
+    .ghost { fill: rgba(255,213,74,.35); stroke: #c08a00; stroke-width: .8; stroke-dasharray: 1.5 1; cursor: pointer; }
+    .last { fill: none; stroke: rgba(192,57,43,.5); stroke-width: 1; }
+
+    #panel { margin: 0 10px; padding: 10px 12px; border-radius: 16px; background: #fff8ea; box-shadow: 0 2px 8px rgba(59,42,26,.15); }
+    .row { display: flex; align-items: center; gap: 10px; }
+    #sticks { display: flex; gap: 5px; height: 46px; align-items: center; }
+    #sticks i { width: 12px; height: 44px; border-radius: 6px; background: #c58b4e; border: 1.5px solid #7a4e22; }
+    #sticks i.flat { background: #f6dfb6; background-image: repeating-linear-gradient(0deg, transparent 0 7px, #7a4e22 7px 8.5px); }
+    #sticks i.flat.mark { background-color: #f6dfb6; box-shadow: inset 0 0 0 3px #c0392b; }
+    #sticks.roll i { animation: flip .45s; }
+    @keyframes flip { 0% { transform: rotateX(0) translateY(0); } 50% { transform: rotateX(540deg) translateY(-14px); } 100% { transform: rotateX(720deg); } }
+    #big { font-size: 26px; font-weight: 900; color: #c0392b; min-width: 64px; opacity: 0; }
+    #big.show { animation: pop .9s forwards; }
+    @keyframes pop { 0% { opacity: 0; transform: scale(.5); } 30% { opacity: 1; transform: scale(1.25); } 100% { opacity: 1; transform: scale(1); } }
+    #throw {
+      margin-left: auto; padding: 12px 18px; border-radius: 14px; border: 0; background: #c0392b; color: #fff;
+      font-size: 17px; font-weight: 900; box-shadow: 0 4px 0 #8e2a20;
+    }
+    #throw:disabled { background: #cbb89a; box-shadow: 0 4px 0 #a8957a; }
+    #throw:not(:disabled):active { transform: translateY(3px); box-shadow: 0 1px 0 #8e2a20; }
+    #pending { display: flex; gap: 6px; flex-wrap: wrap; min-height: 32px; margin-top: 8px; }
+    #pending button { padding: 5px 12px; border-radius: 999px; border: 2px solid #c58b4e; background: #fff; font-weight: 800; color: #3b2a1a; }
+    #pending button.on { background: #c0392b; border-color: #c0392b; color: #fff; }
+    .acts { display: flex; gap: 6px; margin-top: 8px; }
+    .acts button { flex: 1; padding: 10px; border-radius: 12px; border: 0; background: #2fbf71; color: #fff; font-weight: 800; }
+    .acts button[hidden] { display: none; }
+    #goal { background: #f5a623; }
+    #status { font-size: 14px; font-weight: 800; margin-top: 8px; }
+    #log { font-size: 12px; opacity: .75; min-height: 16px; margin-top: 2px; }
+
+    .modal { position: fixed; inset: 0; z-index: 5; display: flex; align-items: center; justify-content: center; background: rgba(59,42,26,.6); padding: 16px; }
+    .modal[hidden] { display: none; }
+    .panel { width: 100%; max-width: 380px; background: #fff; border-radius: 20px; padding: 22px 18px; text-align: center; }
+    .panel h2 { font-size: 22px; }
+    .sub { font-size: 13px; color: #6b5844; margin-top: 4px; }
+    .opt { margin-top: 16px; text-align: left; }
+    .opt label { font-size: 13px; font-weight: 800; }
+    .seg { display: flex; gap: 6px; margin-top: 6px; }
+    .seg button { flex: 1; padding: 10px 0; border-radius: 10px; border: 2px solid #e2d3bb; background: #fffaf0; font-weight: 800; color: #3b2a1a; }
+    .seg button.on { border-color: #c0392b; background: #fdecea; color: #a52a1f; }
+    details { margin-top: 14px; text-align: left; font-size: 13px; line-height: 1.65; }
+    summary { font-weight: 800; cursor: pointer; }
+    .go { margin-top: 18px; width: 100%; padding: 14px; border: 0; border-radius: 14px; background: #c0392b; color: #fff; font-size: 18px; font-weight: 900; }
+    .ghostlink { display: block; margin-top: 10px; color: #a52a1f; font-weight: 800; text-decoration: none; }
+    #res-icon { font-size: 60px; }
+  </style>
+</head>
+<body>
+  <div class="bar">
+    <a href="../../" aria-label="타이틀로">←</a>
+    <h1>🎋 윷놀이</h1>
+    <button id="restart" type="button">새 게임</button>
+  </div>
+
+  <div id="players"></div>
+
+  <div id="boardwrap">
+    <svg id="board" viewBox="0 0 100 100" aria-label="윷판">
+      <rect class="bg" x="1" y="1" width="98" height="98" rx="4"></rect>
+      <g id="base"></g>
+      <g id="pieces"></g>
+    </svg>
+  </div>
+
+  <section id="panel">
+    <div class="row">
+      <div id="sticks"><i class="round"></i><i class="round"></i><i class="round"></i><i class="round"></i></div>
+      <div id="big"></div>
+      <button id="throw" type="button">윷 던지기</button>
+    </div>
+    <div id="pending"></div>
+    <div class="acts">
+      <button id="home" type="button" hidden></button>
+      <button id="goal" type="button" hidden>도착시키기 🏁</button>
+    </div>
+    <div id="status"></div>
+    <div id="log"></div>
+  </section>
+
+  <div id="setup" class="modal">
+    <div class="panel">
+      <h2>🎋 윷놀이</h2>
+      <p class="sub">컴퓨터와 대결! 말 4개를 먼저 모두 도착시키면 승리</p>
+      <div class="opt">
+        <label>상대 수</label>
+        <div class="seg" id="opt-count">
+          <button type="button" data-v="1" class="on">1명</button>
+          <button type="button" data-v="2">2명</button>
+          <button type="button" data-v="3">3명</button>
+        </div>
+      </div>
+      <div class="opt">
+        <label>난이도</label>
+        <div class="seg" id="opt-level">
+          <button type="button" data-v="easy">쉬움</button>
+          <button type="button" data-v="normal" class="on">보통</button>
+        </div>
+      </div>
+      <details>
+        <summary>규칙 보기</summary>
+        · <b>도</b> 1 · <b>개</b> 2 · <b>걸</b> 3 · <b>윷</b> 4 · <b>모</b> 5칸. 표시된 가락 하나만 뒤집히면 <b>빽도</b>(한 칸 뒤로)<br>
+        · <b>윷·모</b>가 나오거나 상대 말을 <b>잡으면</b> 한 번 더 던집니다.<br>
+        · 나온 결과는 원하는 순서로, 원하는 말에 나눠 쓸 수 있어요. 아래 결과 칩을 눌러 고르세요.<br>
+        · 모서리(모·뒷모)나 가운데(방)에 <b>멈추면</b> 다음에 지름길로 갑니다.<br>
+        · 내 말 위에 도착하면 <b>업어서</b> 함께 움직이고, 상대 말 위에 도착하면 <b>잡습니다</b>.<br>
+        · 출발점(참먹이)에 도착하거나 지나가면 완주. 말 4개가 먼저 완주하면 승리!
+      </details>
+      <button id="start" class="go" type="button">게임 시작</button>
+      <a class="ghostlink" href="../../">타이틀로</a>
+    </div>
+  </div>
+
+  <div id="result" class="modal" hidden>
+    <div class="panel">
+      <div id="res-icon"></div>
+      <h2 id="res-title"></h2>
+      <p class="sub" id="res-sub"></p>
+      <button id="again" class="go" type="button">다시 하기</button>
+      <a class="ghostlink" href="../../">타이틀로</a>
+    </div>
+  </div>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
