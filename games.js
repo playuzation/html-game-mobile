@@ -40,4 +40,12 @@ export const GAMES = [
     color: '#1e88e5',
     tags: ['보드게임', 'AI 대전', '라운드 제한'],
   },
+  {
+    id: 'dungeon-dive',
+    title: 'DUNGEON DIVE',
+    desc: '매번 달라지는 던전 10층을 내려가는 사이드뷰 로그라이크 플랫포머',
+    icon: '🗡️',
+    color: '#7c4dff',
+    tags: ['로그라이크', '플랫포머', '십자키 · A/B'],
+  },
 ];

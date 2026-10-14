@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#120e22">
+  <title>Dungeon Dive</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      height: 100%; overflow: hidden; background: #120e22; color: #fff;
+      font-family: system-ui, -apple-system, "Apple SD Gothic Neo", sans-serif;
+      user-select: none; -webkit-user-select: none; touch-action: none; overscroll-behavior: none;
+    }
+    #game { position: fixed; inset: 0; display: block; }
+    #hud {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 2;
+      padding: calc(env(safe-area-inset-top) + 8px) 12px 6px;
+      display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; background: rgba(18,14,34,.85);
+    }
+    #hud a, #toggle {
+      display: grid; place-items: center; height: 34px; min-width: 34px; padding: 0 10px; border-radius: 10px;
+      background: rgba(255,255,255,.1); color: #fff; text-decoration: none; font-weight: 700; border: 1px solid rgba(255,255,255,.15); font-size: 16px;
+    }
+    #toggle.on { background: #7c4dff; border-color: #b39ddb; }
+    .mid { text-align: center; min-width: 0; }
+    #hearts { font-size: 15px; letter-spacing: 1px; white-space: nowrap; overflow: hidden; }
+    .stats { display: flex; justify-content: center; gap: 12px; font-size: 12px; margin-top: 2px; opacity: .9; }
+    #msg {
+      position: fixed; left: 50%; transform: translateX(-50%); z-index: 2; padding: 6px 14px; border-radius: 999px;
+      background: rgba(0,0,0,.6); font-size: 14px; font-weight: 800; pointer-events: none; white-space: nowrap;
+    }
+    #msg[hidden] { display: none; }
+
+    #controls {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 3; height: 200px;
+      padding: 0 22px calc(env(safe-area-inset-bottom) + 16px);
+      display: flex; justify-content: space-between; align-items: flex-end; pointer-events: none;
+    }
+    #controls[hidden] { display: none; }
+    @media (orientation: portrait) { #controls { background: #1a1530; border-top: 1px solid rgba(255,255,255,.08); } }
+    #dpad { position: relative; width: 150px; height: 150px; pointer-events: auto; touch-action: none; }
+    #dpad b {
+      position: absolute; width: 50px; height: 50px; display: grid; place-items: center;
+      background: #2d2550; border: 2px solid #4d4380; border-radius: 10px; font-size: 18px; color: #d1c4e9;
+    }
+    #dpad .u { left: 50px; top: 0; } #dpad .d { left: 50px; bottom: 0; } #dpad .l { left: 0; top: 50px; } #dpad .r { right: 0; top: 50px; }
+    #dpad::after { content: ''; position: absolute; left: 50px; top: 50px; width: 50px; height: 50px; background: #2d2550; }
+    #dpad.up .u, #dpad.down .d, #dpad.left .l, #dpad.right .r { background: #7c4dff; color: #fff; }
+    .ab { position: relative; width: 150px; height: 136px; pointer-events: none; }
+    .ab button {
+      position: absolute; width: 66px; height: 66px; border-radius: 50%; border: 0; pointer-events: auto; touch-action: none;
+      font-size: 21px; font-weight: 900; color: #fff; box-shadow: 0 5px 0 rgba(0,0,0,.35);
+    }
+    .ab button.on { transform: translateY(3px); box-shadow: 0 2px 0 rgba(0,0,0,.35); filter: brightness(1.2); }
+    .ab button small { display: block; font-size: 10px; font-weight: 700; opacity: .85; }
+    #btn-a { right: 0; top: 0; background: #e8505b; }
+    #btn-b { left: 0; bottom: 0; background: #3f8cff; }
+
+    .modal { position: fixed; inset: 0; z-index: 5; display: flex; align-items: center; justify-content: center; background: rgba(10,6,24,.86); padding: 16px; }
+    .modal[hidden] { display: none; }
+    .panel { width: 100%; max-width: 400px; text-align: center; }
+    .panel h1 { font-size: 30px; font-weight: 900; letter-spacing: 1px; }
+    .panel h2 { font-size: 22px; }
+    .sub { opacity: .8; font-size: 13px; margin-top: 6px; line-height: 1.6; }
+    details { margin-top: 14px; text-align: left; font-size: 13px; line-height: 1.7; background: rgba(255,255,255,.06); padding: 10px 12px; border-radius: 12px; }
+    summary { font-weight: 800; cursor: pointer; }
+    .go { margin-top: 18px; width: 100%; padding: 14px; border: 0; border-radius: 14px; background: #7c4dff; color: #fff; font-size: 18px; font-weight: 900; cursor: pointer; }
+    .link { display: block; margin-top: 12px; color: #b39ddb; font-weight: 800; text-decoration: none; }
+    #choices { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+    #choices button {
+      display: grid; grid-template-columns: 44px 1fr; grid-template-rows: auto auto; align-items: center; text-align: left; gap: 0 10px;
+      padding: 12px; border-radius: 14px; border: 2px solid #4d4380; background: #221b40; color: #fff; cursor: pointer;
+    }
+    #choices button:active { border-color: #b39ddb; transform: scale(.98); }
+    #choices .ic { grid-row: span 2; font-size: 30px; text-align: center; }
+    #choices b { font-size: 16px; }
+    #choices small { font-size: 12px; opacity: .8; }
+    .big { font-size: 56px; }
+  </style>
+</head>
+<body>
+  <canvas id="game"></canvas>
+
+  <header id="hud">
+    <a href="../../" aria-label="타이틀로">←</a>
+    <div class="mid">
+      <div id="hearts"></div>
+      <div class="stats"><span id="floor"></span><span id="coins"></span><span id="kills"></span></div>
+    </div>
+    <button id="toggle" type="button" aria-label="조작키 표시">🎮</button>
+  </header>
+  <div id="msg" hidden></div>
+
+  <div id="controls" hidden>
+    <div id="dpad" aria-label="십자키"><b class="u">▲</b><b class="l">◀</b><b class="r">▶</b><b class="d">▼</b></div>
+    <div class="ab">
+      <button id="btn-b" type="button">B<small>공격</small></button>
+      <button id="btn-a" type="button">A<small>점프</small></button>
+    </div>
+  </div>
+
+  <div id="start" class="modal">
+    <div class="panel">
+      <div class="big">🗡️</div>
+      <h1>DUNGEON DIVE</h1>
+      <p class="sub">매번 달라지는 던전 10층을 내려가세요.<br>죽으면 처음부터! 층을 깰 때마다 강화를 하나 고릅니다.</p>
+      <p class="sub" id="start-best"></p>
+      <details>
+        <summary>조작법 · 규칙</summary>
+        · ◀ ▶ 이동 · <b>A</b> 점프 (길게 누르면 높이) · <b>B</b> 칼 공격<br>
+        · ▼ + A: 발판 아래로 내려가기<br>
+        · 적을 위에서 밟아도 공격이 됩니다 (보스 제외)<br>
+        · 상자를 열면 동전이나 체력, 오른쪽 끝의 <b>문</b>으로 다음 층<br>
+        · 5층·10층은 보스 — 쓰러뜨려야 문이 열립니다<br>
+        · 키보드: ← → 이동, Z/Space 점프, X 공격, ↓+Z 내려가기
+      </details>
+      <button id="go" class="go" type="button">던전 입장</button>
+      <a class="link" href="../../">타이틀로</a>
+    </div>
+  </div>
+
+  <div id="pick" class="modal" hidden>
+    <div class="panel">
+      <h2 id="pick-title"></h2>
+      <div id="choices"></div>
+    </div>
+  </div>
+
+  <div id="end" class="modal" hidden>
+    <div class="panel">
+      <div class="big" id="end-icon"></div>
+      <h2 id="end-title"></h2>
+      <p class="sub" id="end-stats"></p>
+      <p class="sub" id="end-best"></p>
+      <button id="again" class="go" type="button">다시 도전</button>
+      <a class="link" href="../../">타이틀로</a>
+    </div>
+  </div>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
