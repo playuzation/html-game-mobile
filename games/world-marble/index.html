@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#123a63">
+  <title>World Marble</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body { height: 100%; overflow: hidden; }
+    body {
+      background: linear-gradient(#123a63, #0b2340); color: #fff;
+      font-family: system-ui, -apple-system, "Apple SD Gothic Neo", sans-serif;
+      user-select: none; -webkit-user-select: none; touch-action: manipulation;
+      display: flex; flex-direction: column; height: 100dvh;
+      padding: calc(env(safe-area-inset-top) + 8px) 0 calc(env(safe-area-inset-bottom) + 8px);
+    }
+    button { font: inherit; cursor: pointer; }
+    .bar { display: flex; align-items: center; justify-content: space-between; padding: 0 12px; }
+    .bar a, #restart {
+      height: 34px; min-width: 34px; display: grid; place-items: center; padding: 0 12px; border-radius: 10px; border: 0;
+      background: rgba(255,255,255,.12); color: #fff; text-decoration: none; font-weight: 800;
+    }
+    .bar h1 { font-size: 16px; font-weight: 900; }
+
+    #players { display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 6px; padding: 8px 8px 0; }
+    .pl { padding: 6px 8px; border-radius: 12px; background: rgba(255,255,255,.08); border: 2px solid transparent; border-left: 5px solid var(--c); }
+    .pl.turn { border-color: #ffd54a; border-left-color: var(--c); background: rgba(255,255,255,.16); }
+    .pl.out { opacity: .4; }
+    .pl .nm { font-size: 12px; font-weight: 800; white-space: nowrap; }
+    .pl .nm em { font-style: normal; font-size: 10px; padding: 1px 5px; border-radius: 6px; background: rgba(255,255,255,.18); margin-left: 2px; }
+    .pl .money { font-size: 13px; font-weight: 800; margin-top: 2px; }
+    .pl .asset { font-size: 10px; opacity: .8; }
+
+    #wrap { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 8px; }
+    #board {
+      width: min(100%, 100vh - 210px, 560px); aspect-ratio: 1; min-width: 280px;
+      display: grid; grid-template: repeat(9, 1fr) / repeat(9, 1fr); gap: 2px;
+      background: #e8f1f8; border-radius: 10px; padding: 3px; color: #1b2a3a;
+    }
+    .cell {
+      position: relative; overflow: hidden; border-radius: 4px; background: #fff;
+      display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+      font-size: clamp(7px, 2.1vw, 11px); line-height: 1.1; text-align: center; cursor: pointer;
+      box-shadow: inset 0 0 0 2px var(--o, transparent);
+    }
+    .cell.owned { background: color-mix(in srgb, var(--o) 16%, #fff); }
+    .cell .band { display: block; width: 100%; height: 18%; flex: none; background: var(--g, transparent); }
+    .cell .ic { font-size: 1.15em; line-height: 1.2; }
+    .cell.city .ic { display: none; }
+    .cell .nm { font-weight: 800; letter-spacing: -.5px; white-space: nowrap; transform: scale(.92); }
+    .cell .pr { font-size: .85em; color: #4a6075; }
+    .cell.corner { background: #ffe9a8; }
+    .cell.corner .ic { font-size: 1.5em; margin-top: 2%; }
+    .cell.owned .pr { color: var(--o); font-weight: 900; }
+    .cell.key { background: #fff6d6; }
+    .cell.tour { background: #e3f4ff; }
+    .cell.tour.owned { background: color-mix(in srgb, var(--o) 16%, #e3f4ff); }
+    .cell.here { outline: 3px solid #ffd54a; outline-offset: -1px; z-index: 1; }
+    .cell.pick { animation: pick 1s infinite alternate; }
+    @keyframes pick { to { background: #fff59d; } }
+    .tok { position: absolute; left: 0; right: 0; bottom: 1px; display: flex; justify-content: center; flex-wrap: wrap; gap: 1px; }
+    .tok i {
+      width: clamp(13px, 3.6vw, 20px); height: clamp(13px, 3.6vw, 20px); border-radius: 50%; border: 1.5px solid #fff;
+      font-style: normal; font-size: clamp(8px, 2.3vw, 12px); display: grid; place-items: center; box-shadow: 0 1px 3px rgba(0,0,0,.4);
+    }
+
+    #center {
+      grid-area: 2 / 2 / 9 / 9; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+      padding: 6px; text-align: center; color: #12324f;
+    }
+    #round { font-size: 12px; font-weight: 800; color: #5b7690; }
+    #dice { font-size: clamp(18px, 6vw, 28px); font-weight: 900; }
+    #roll, #yes, #no {
+      padding: 10px 18px; border: 0; border-radius: 12px; font-weight: 900; font-size: 15px; color: #fff; background: #1e88e5;
+      box-shadow: 0 3px 0 #135ea0;
+    }
+    #roll[hidden], #ask[hidden], #card[hidden], #info[hidden] { display: none; }
+    #ask { display: flex; flex-direction: column; gap: 6px; align-items: center; font-size: 13px; }
+    #ask small { color: #5b7690; }
+    #ask .btns { display: flex; gap: 6px; }
+    #yes { background: #43a047; box-shadow: 0 3px 0 #2e7031; }
+    #no { background: #90a4ae; box-shadow: 0 3px 0 #62747c; }
+    #card { padding: 8px 10px; border-radius: 10px; background: #fff3c4; border: 2px solid #f0c040; font-size: 12px; font-weight: 700; max-width: 95%; }
+    #info { padding: 6px 8px; border-radius: 10px; background: #fff; font-size: 11px; max-width: 95%; box-shadow: 0 1px 4px rgba(0,0,0,.15); }
+    #hint { font-size: 12px; font-weight: 800; min-height: 14px; }
+    #log { font-size: 10.5px; color: #4a6075; max-width: 100%; }
+    #log div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    #log div:last-child { color: #12324f; font-weight: 700; }
+
+    .modal { position: fixed; inset: 0; z-index: 5; display: flex; align-items: center; justify-content: center; background: rgba(5,15,30,.75); padding: 16px; }
+    .modal[hidden] { display: none; }
+    .panel { width: 100%; max-width: 380px; background: #fff; color: #12324f; border-radius: 20px; padding: 22px 18px; text-align: center; }
+    .panel h2 { font-size: 22px; }
+    .sub { font-size: 13px; color: #5b7690; margin-top: 4px; }
+    .opt { margin-top: 14px; text-align: left; }
+    .opt label { font-size: 13px; font-weight: 800; }
+    .seg { display: flex; gap: 6px; margin-top: 6px; }
+    .seg button { flex: 1; padding: 10px 0; border-radius: 10px; border: 2px solid #dbe5ee; background: #f6f9fc; font-weight: 800; color: #12324f; }
+    .seg button.on { border-color: #1e88e5; background: #e3f0fd; color: #0d5aa7; }
+    details { margin-top: 14px; text-align: left; font-size: 13px; line-height: 1.65; }
+    summary { font-weight: 800; cursor: pointer; }
+    .go { margin-top: 18px; width: 100%; padding: 14px; border: 0; border-radius: 14px; background: #1e88e5; color: #fff; font-size: 18px; font-weight: 900; }
+    .link { display: block; margin-top: 10px; color: #1e88e5; font-weight: 800; text-decoration: none; }
+    #res-icon { font-size: 56px; }
+    table { width: 100%; margin-top: 12px; border-collapse: collapse; font-size: 14px; }
+    th, td { padding: 7px 4px; border-bottom: 1px solid #e3eaf1; }
+    th { font-size: 12px; color: #5b7690; }
+    tr.me td { font-weight: 900; background: #fff8d6; }
+  </style>
+</head>
+<body>
+  <div class="bar">
+    <a href="../../" aria-label="타이틀로">←</a>
+    <h1>🌍 세계 일주 마블</h1>
+    <button id="restart" type="button">새 게임</button>
+  </div>
+
+  <div id="players"></div>
+
+  <div id="wrap">
+    <div id="board">
+      <div id="center">
+        <div id="round"></div>
+        <div id="dice">🎲</div>
+        <button id="roll" type="button" hidden>주사위 굴리기</button>
+        <div id="ask" hidden>
+          <div id="ask-text"></div>
+          <div class="btns"><button id="yes" type="button">구매</button><button id="no" type="button">패스</button></div>
+        </div>
+        <div id="hint"></div>
+        <div id="card" hidden></div>
+        <div id="info" hidden></div>
+        <div id="log"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="setup" class="modal">
+    <div class="panel">
+      <h2>🌍 세계 일주 마블</h2>
+      <p class="sub">정해진 라운드가 끝났을 때 총자산이 가장 많은 사람이 1위!</p>
+      <div class="opt">
+        <label>상대 수</label>
+        <div class="seg" id="opt-count">
+          <button type="button" data-v="1">1명</button>
+          <button type="button" data-v="2" class="on">2명</button>
+          <button type="button" data-v="3">3명</button>
+        </div>
+      </div>
+      <div class="opt">
+        <label>라운드 수</label>
+        <div class="seg" id="opt-rounds">
+          <button type="button" data-v="10">10 (짧게)</button>
+          <button type="button" data-v="20" class="on">20</button>
+          <button type="button" data-v="30">30 (길게)</button>
+        </div>
+      </div>
+      <div class="opt">
+        <label>난이도</label>
+        <div class="seg" id="opt-level">
+          <button type="button" data-v="easy">쉬움</button>
+          <button type="button" data-v="normal" class="on">보통</button>
+        </div>
+      </div>
+      <details>
+        <summary>규칙 보기</summary>
+        · 시작 자금 300만. 출발지를 지날 때마다 월급 20만.<br>
+        · 빈 도시·관광지에 멈추면 살 수 있고, 내 도시에 다시 멈추면 <b>별장 → 빌딩 → 호텔</b>을 한 단계씩 짓습니다.<br>
+        · 남의 땅에 멈추면 통행료. 같은 색 도시를 모두 가지면 통행료 1.5배.<br>
+        · 돈이 모자라면 싼 땅부터 반값에 팔고, 그래도 모자라면 파산.<br>
+        · <b>더블</b>이면 한 번 더 (3번 연속이면 무인도). <b>무인도</b>는 3턴 쉬거나 더블로 탈출.<br>
+        · <b>황금열쇠</b>는 행운 카드, <b>기금납부</b> 칸에서 낸 돈은 <b>복지기금</b> 칸에서 받습니다.<br>
+        · <b>우주여행</b> 칸에 멈추면 다음 차례에 원하는 칸으로 날아갑니다.<br>
+        · 칸을 누르면 주인·통행료를 볼 수 있어요.<br>
+        · <b>총자산</b> = 현금 + 땅값 + 건물값. 라운드가 끝나면 총자산 순으로 순위를 매깁니다.
+      </details>
+      <button id="start" class="go" type="button">게임 시작</button>
+      <a class="link" href="../../">타이틀로</a>
+    </div>
+  </div>
+
+  <div id="result" class="modal" hidden>
+    <div class="panel">
+      <div id="res-icon"></div>
+      <h2 id="res-title"></h2>
+      <p class="sub">총자산 = 현금 + 땅값 + 건물값</p>
+      <table><thead><tr><th>순위</th><th>이름</th><th>총자산</th><th>현금</th></tr></thead><tbody id="res-table"></tbody></table>
+      <button id="again" class="go" type="button">다시 하기</button>
+      <a class="link" href="../../">타이틀로</a>
+    </div>
+  </div>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>

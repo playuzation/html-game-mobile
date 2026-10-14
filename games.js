@@ -32,4 +32,12 @@ export const GAMES = [
     color: '#c0392b',
     tags: ['보드게임', 'AI 대전'],
   },
+  {
+    id: 'world-marble',
+    title: '세계 일주 마블',
+    desc: '도시를 사고 건물을 올려 통행료를 받자! 정해진 라운드 후 총자산 순위 대결',
+    icon: '🌍',
+    color: '#1e88e5',
+    tags: ['보드게임', 'AI 대전', '라운드 제한'],
+  },
 ];
