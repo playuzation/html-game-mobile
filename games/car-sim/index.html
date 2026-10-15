@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#1c2128">
+  <title>Car Simulator</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      height: 100%; overflow: hidden; background: #1c2128; color: #fff;
+      font-family: system-ui, -apple-system, "Apple SD Gothic Neo", sans-serif;
+      user-select: none; -webkit-user-select: none; touch-action: none; overscroll-behavior: none;
+    }
+    #view { position: fixed; inset: 0; display: block; }
+    #top {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 2;
+      padding: calc(env(safe-area-inset-top) + 8px) 10px 8px;
+      display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center;
+      background: rgba(28,33,40,.88);
+    }
+    .btn {
+      height: 34px; padding: 0 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,.15);
+      background: rgba(255,255,255,.1); color: #fff; font: inherit; font-size: 13px; font-weight: 700;
+      display: grid; place-items: center; text-decoration: none; cursor: pointer; white-space: nowrap;
+    }
+    .gauge { display: flex; align-items: center; justify-content: center; gap: 10px; }
+    .spd { text-align: right; line-height: 1; }
+    #speed { font-size: 30px; font-weight: 900; font-variant-numeric: tabular-nums; }
+    .unit { font-size: 10px; opacity: .7; }
+    #gear { font-size: 20px; font-weight: 900; color: #4fc3f7; min-width: 34px; text-align: center; }
+    .rpmbox { width: 92px; }
+    .rpmtrack { height: 8px; border-radius: 4px; background: rgba(255,255,255,.12); overflow: hidden; }
+    #rpm-bar { height: 100%; width: 10%; background: linear-gradient(90deg, #4caf50, #ffeb3b); transition: width .08s; }
+    #rpm-bar.red { background: #f44336; }
+    #rpm, #odo { font-size: 10px; opacity: .75; margin-top: 2px; }
+    .side { display: flex; gap: 6px; }
+    #stats {
+      position: fixed; left: 10px; z-index: 2; top: calc(env(safe-area-inset-top) + 64px);
+      padding: 4px 10px; border-radius: 999px; background: rgba(0,0,0,.45); font-size: 12px; font-weight: 700;
+    }
+    #toast, #hint {
+      position: fixed; left: 50%; transform: translateX(-50%); z-index: 3; padding: 8px 14px; border-radius: 999px;
+      background: rgba(0,0,0,.72); font-size: 14px; font-weight: 800; pointer-events: none; white-space: nowrap;
+    }
+    #toast { top: calc(env(safe-area-inset-top) + 100px); }
+    #hint { top: calc(env(safe-area-inset-top) + 140px); background: rgba(46,125,50,.85); }
+    #toast[hidden], #hint[hidden] { display: none; }
+
+    /* 운전 패널: 세로 화면은 아래 패널, 가로 화면은 양쪽 아래에 겹침 */
+    #panel {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 3; height: 210px;
+      padding: 10px 14px calc(env(safe-area-inset-bottom) + 12px);
+      display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; pointer-events: none;
+    }
+    @media (orientation: portrait) { #panel { background: #1c2128; border-top: 1px solid rgba(255,255,255,.08); } }
+    #wheel {
+      width: 170px; height: 170px; border-radius: 50%; pointer-events: auto; touch-action: none; flex: none;
+      background: radial-gradient(circle, #2b3138 0 22%, transparent 23%),
+                  conic-gradient(from -90deg, transparent 0 0);
+      border: 16px solid #2b3138; box-shadow: 0 0 0 2px #444c56 inset, 0 4px 14px rgba(0,0,0,.5);
+      position: relative;
+    }
+    #wheel::before {
+      content: ''; position: absolute; left: 50%; top: 50%; width: 100%; height: 14px; transform: translate(-50%, -50%);
+      background: #2b3138; border-radius: 7px;
+    }
+    #wheel::after {
+      content: ''; position: absolute; left: 50%; top: -14px; width: 10px; height: 16px; transform: translateX(-50%);
+      background: #ffd54a; border-radius: 3px;
+    }
+    #wheel .hub {
+      position: absolute; left: 50%; top: 50%; width: 46px; height: 46px; transform: translate(-50%, -50%);
+      border-radius: 50%; background: #3a424c; display: grid; place-items: center; font-size: 11px; font-weight: 900; color: #9aa4b1;
+    }
+    #wheel .spoke { position: absolute; left: 50%; top: 50%; width: 14px; height: 50%; transform: translateX(-50%); background: #2b3138; border-radius: 7px; }
+    #gears { display: flex; flex-direction: column; gap: 5px; pointer-events: auto; }
+    #gears button {
+      width: 46px; height: 38px; border-radius: 9px; border: 2px solid #444c56; background: #2b3138; color: #9aa4b1;
+      font-size: 17px; font-weight: 900; cursor: pointer;
+    }
+    #gears button.on { background: #4fc3f7; border-color: #b3e5fc; color: #0d2b3a; }
+    .pedals { display: flex; align-items: flex-end; gap: 10px; pointer-events: auto; }
+    .pedal {
+      border-radius: 12px; border: 2px solid #555f6b; background: repeating-linear-gradient(0deg, #3a424c 0 6px, #2b3138 6px 12px);
+      display: grid; place-items: end center; padding-bottom: 8px; font-size: 12px; font-weight: 900; color: #c9d1d9; touch-action: none; cursor: pointer;
+    }
+    #brake { width: 76px; height: 96px; }
+    #gas { width: 56px; height: 150px; }
+    .pedal.on { transform: perspective(300px) rotateX(18deg); border-color: #ffd54a; filter: brightness(1.3); }
+    @media (orientation: landscape) { #wheel { width: 150px; height: 150px; } #gas { height: 130px; } #gears { margin-left: auto; } }
+  </style>
+</head>
+<body>
+  <canvas id="view"></canvas>
+
+  <header id="top">
+    <a class="btn" href="../../" aria-label="타이틀로">←</a>
+    <div class="gauge">
+      <div class="spd"><div id="speed">0</div><div class="unit">km/h</div></div>
+      <div id="gear">P</div>
+      <div class="rpmbox"><div class="rpmtrack"><div id="rpm-bar"></div></div><div id="rpm"></div><div id="odo"></div></div>
+    </div>
+    <div class="side">
+      <button id="cam" class="btn" type="button">🧭 차량 기준</button>
+      <button id="reset" class="btn" type="button" aria-label="처음 위치로">↺</button>
+    </div>
+  </header>
+  <div id="stats"></div>
+  <div id="toast" hidden></div>
+  <div id="hint" hidden></div>
+
+  <div id="panel">
+    <div id="wheel" aria-label="핸들 (돌려서 조향)"><span class="spoke"></span><span class="hub">STEER</span></div>
+    <div id="gears" aria-label="기어">
+      <button type="button" data-g="P">P</button>
+      <button type="button" data-g="R">R</button>
+      <button type="button" data-g="N">N</button>
+      <button type="button" data-g="D">D</button>
+    </div>
+    <div class="pedals">
+      <div id="brake" class="pedal" aria-label="브레이크">브레이크</div>
+      <div id="gas" class="pedal" aria-label="가속">가속</div>
+    </div>
+  </div>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>

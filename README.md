@@ -97,6 +97,19 @@ node games/world-marble/tools/simulate.mjs 3000   # AI끼리 대전: 현금·소
 node games/dungeon-dive/tools/verify-levels.mjs 500   # 조각 단독 통과 + 5000개 층 도달 가능성 검사
 ```
 
+### 🚗 자동차 시뮬레이터
+위에서 내려다보는 간단한 운전 시뮬레이터. 400m × 400m 도시(도로 격자·건물·주차장·콘 코스)를 자유롭게 달립니다.
+
+- 조작: 화면 핸들을 돌려 조향(놓으면 복귀) · 기어 P/R/N/D · 가속/브레이크 페달(아래를 누를수록 깊게)
+- 키보드: ↑ 가속 · ↓/Space 브레이크 · ← → 핸들 · P/R/N 기어, F = D
+- 물리: 자전거 모델 조향, 출력 제한 가속, 공기·구름 저항, 잔디 감속, 6단 자동 변속(rpm 표시), P·R 은 정지 후에만 변속
+- 주차 연습: 노란 칸에 차를 넣고 멈춘 뒤 P → 성공하면 다음 칸. 충돌·콘 넘어뜨림 횟수 기록
+- 카메라: 차량 기준 회전 / 북쪽 고정 전환, 미니맵과 목표 방향 화살표
+
+```
+node games/car-sim/tools/test-physics.mjs   # 0→100 가속·최고속도·제동거리·회전반경·벽 관통·주차 판정 검사
+```
+
 ## 구조
 
 ```
@@ -136,7 +149,7 @@ games/
    │  ├─ ai.js           컴퓨터 판단
    │  └─ (board.js 칸·금액 규칙, cards.js 황금열쇠 — 리프)
    └─ tools/simulate.mjs       대량 대전 검증
-└─ dungeon-dive/
+├─ dungeon-dive/
    ├─ index.html
    ├─ src/main.js        루트: 화면 배치·루프·HUD·조작키·강화 선택/결과
    │  ├─ game.js         런 진행: 층·전투·줍기·강화·죽음/클리어
@@ -148,6 +161,15 @@ games/
    │  └─ input.js        키보드 + 화면 십자키/A·B
    │  (config.js 상수, rng.js 시드 난수 — 리프)
    └─ tools/verify-levels.mjs  층 도달 가능성 검증
+└─ car-sim/
+   ├─ index.html
+   ├─ src/main.js        루트: 화면 배치·루프·계기판·버튼
+   │  ├─ sim.js          차 + 지도 충돌(SAT)·콘·주차 판정
+   │  │  └─ car.js       자동차 물리·자동 변속 (config.js 제원)
+   │  ├─ renderer.js     도시·차·목표 화살표·미니맵 그리기
+   │  └─ controls.js     핸들·페달·기어·키보드 (리프)
+   │  (world.js 지도 데이터 — 리프)
+   └─ tools/test-physics.mjs   물리·판정 검증
 ```
 
 각 게임은 자기 폴더 안에서만 import 하며, 공용으로는 `common/` 리프 모듈만 참조합니다 (순환 참조 없음).
