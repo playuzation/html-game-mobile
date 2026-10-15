@@ -110,6 +110,19 @@ node games/dungeon-dive/tools/verify-levels.mjs 500   # 조각 단독 통과 + 5
 node games/car-sim/tools/test-physics.mjs   # 0→100 가속·최고속도·제동거리·회전반경·벽 관통·주차 판정 검사
 ```
 
+### 🎯 AIM TRAINER
+FPS 사격 연습 튜토리얼. 조준선은 화면 중앙에 고정, 시점을 돌려 과녁을 맞춥니다.
+
+- 과녁은 최대 4개가 무작위 위치(좌우 ±70°, 위아래 -12°~25°)에 등장, 맞추면 다른 곳에 새로 생김
+- 명중 **+1** · 빗나감 **-1**, 화면 위에 점수 · 플레이 시간 · **과녁당 평균 시간**(마지막 명중 시각 ÷ 명중 수) 표시
+- 튜토리얼: ① 시점 돌리기 → ② 연습 과녁 1개 사격 → ③ 실전 시작 (바로 시작도 가능)
+- 모바일: 화면 드래그로 시점, FIRE 버튼으로 사격 / PC: 화면 클릭 후 마우스로 조준(포인터 잠금), 클릭·Space 사격
+- 감도 조절, 조준선이 과녁 위면 초록색, 화면 밖 과녁 방향 화살표, 결과 화면(정확도·가장 빠른 명중·최고 점수)
+
+```
+node games/aim-trainer/tools/test-session.mjs   # 투영·판정·점수·시간·과녁 배치 검사
+```
+
 ## 구조
 
 ```
@@ -161,7 +174,7 @@ games/
    │  └─ input.js        키보드 + 화면 십자키/A·B
    │  (config.js 상수, rng.js 시드 난수 — 리프)
    └─ tools/verify-levels.mjs  층 도달 가능성 검증
-└─ car-sim/
+├─ car-sim/
    ├─ index.html
    ├─ src/main.js        루트: 화면 배치·루프·계기판·버튼
    │  ├─ sim.js          차 + 지도 충돌(SAT)·콘·주차 판정
@@ -170,6 +183,14 @@ games/
    │  └─ controls.js     핸들·페달·기어·키보드 (리프)
    │  (world.js 지도 데이터 — 리프)
    └─ tools/test-physics.mjs   물리·판정 검증
+└─ aim-trainer/
+   ├─ index.html
+   ├─ src/main.js        루트: 튜토리얼 단계·HUD·감도·결과
+   │  ├─ session.js      과녁 배치·명중 판정·점수/시간 기록
+   │  ├─ renderer.js     1인칭 3D 화면(바닥 격자·과녁·조준선)
+   │  └─ input.js        터치 드래그·FIRE·포인터 잠금 (리프)
+   │  (math.js 방향·투영 계산 — 리프)
+   └─ tools/test-session.mjs   판정·기록 검증
 ```
 
 각 게임은 자기 폴더 안에서만 import 하며, 공용으로는 `common/` 리프 모듈만 참조합니다 (순환 참조 없음).

@@ -56,4 +56,12 @@ export const GAMES = [
     color: '#e53935',
     tags: ['시뮬레이터', '핸들 · 페달'],
   },
+  {
+    id: 'aim-trainer',
+    title: 'AIM TRAINER',
+    desc: '시점을 돌려 과녁을 맞추는 FPS 사격 연습. 점수·플레이 시간·과녁당 평균 시간 기록',
+    icon: '🎯',
+    color: '#2979ff',
+    tags: ['FPS 연습', '튜토리얼'],
+  },
 ];
