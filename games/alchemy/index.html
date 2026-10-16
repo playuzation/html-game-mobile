@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#1a1430">
+  <title>Little Alchemy</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body { height: 100%; overflow: hidden; }
+    body {
+      display: flex; flex-direction: column; height: 100dvh; color: #fff;
+      background: #1a1430; font-family: system-ui, -apple-system, "Apple SD Gothic Neo", sans-serif;
+      user-select: none; -webkit-user-select: none; touch-action: none; overscroll-behavior: none;
+      padding-top: env(safe-area-inset-top);
+    }
+    button { font: inherit; cursor: pointer; }
+    .bar { display: flex; align-items: center; gap: 8px; padding: 8px 10px; }
+    .btn {
+      height: 34px; min-width: 34px; padding: 0 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,.15);
+      background: rgba(255,255,255,.1); color: #fff; font-size: 13px; font-weight: 700; display: grid; place-items: center; text-decoration: none;
+    }
+    .prog { flex: 1; min-width: 0; }
+    .prog .top { display: flex; justify-content: space-between; font-size: 13px; font-weight: 800; }
+    .track { height: 8px; margin-top: 4px; border-radius: 4px; background: rgba(255,255,255,.12); overflow: hidden; }
+    #bar { height: 100%; width: 0; background: linear-gradient(90deg, #7c4dff, #ff6ec7); transition: width .4s; }
+
+    #board {
+      position: relative; flex: 1; min-height: 0; margin: 0 10px; border-radius: 18px; overflow: hidden;
+      background: radial-gradient(circle at 50% 40%, #2e2457, #1f1840 70%);
+      box-shadow: inset 0 0 0 2px rgba(255,255,255,.06);
+    }
+    #board::before {
+      content: '여기서 겹쳐서 조합'; position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%);
+      font-size: 12px; opacity: .3; pointer-events: none;
+    }
+    .token {
+      position: absolute; left: 0; top: 0; width: 64px; height: 64px; border-radius: 16px; touch-action: none;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      background: rgba(255,255,255,.95); color: #2a2046; box-shadow: 0 4px 10px rgba(0,0,0,.35); cursor: grab;
+      transition: box-shadow .15s;
+    }
+    .token .em { font-size: 28px; line-height: 1; }
+    .token .nm { font-size: 10px; font-weight: 800; margin-top: 2px; max-width: 60px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .token.drag { z-index: 5; box-shadow: 0 10px 22px rgba(0,0,0,.5); cursor: grabbing; }
+    .token.pop { animation: pop .35s; }
+    .token.new { box-shadow: 0 0 0 3px #ffd54a, 0 0 22px #ffd54a; }
+    .token.shake { animation: shake .35s; }
+    @keyframes pop { from { scale: .2; } 70% { scale: 1.2; } to { scale: 1; } }
+    @keyframes shake { 25% { translate: -6px 0; } 75% { translate: 6px 0; } }
+
+    .tools { display: flex; gap: 6px; padding: 8px 10px 6px; }
+    #search {
+      flex: 1; min-width: 0; height: 34px; padding: 0 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,.15);
+      background: rgba(255,255,255,.08); color: #fff; font: inherit; font-size: 14px;
+    }
+    #library {
+      height: 34vh; overflow-y: auto; padding: 4px 10px calc(env(safe-area-inset-bottom) + 10px);
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 6px; align-content: start;
+      touch-action: pan-y;
+    }
+    .item {
+      height: 64px; border-radius: 12px; border: 0; background: rgba(255,255,255,.1); color: #fff;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; touch-action: pan-y;
+    }
+    .item.base { background: rgba(124,77,255,.3); }
+    .item.fresh { box-shadow: 0 0 0 2px #ffd54a; }
+    .item .em { font-size: 24px; line-height: 1; }
+    .item .nm { font-size: 10px; font-weight: 700; margin-top: 3px; white-space: nowrap; }
+    #toast {
+      position: fixed; left: 50%; transform: translateX(-50%); top: calc(env(safe-area-inset-top) + 62px); z-index: 6;
+      max-width: calc(100% - 24px); padding: 8px 14px; border-radius: 999px; background: rgba(0,0,0,.7);
+      font-size: 13px; font-weight: 700; pointer-events: none; text-align: center;
+    }
+    #toast.strong { background: #7c4dff; }
+    #toast[hidden] { display: none; }
+    .modal { position: fixed; inset: 0; z-index: 9; display: flex; align-items: center; justify-content: center; background: rgba(10,6,24,.85); padding: 16px; }
+    .modal[hidden] { display: none; }
+    .panel { max-width: 360px; text-align: center; }
+    .panel h2 { font-size: 26px; margin-top: 6px; }
+    .panel p { opacity: .85; margin-top: 8px; line-height: 1.6; }
+    .go { margin-top: 16px; width: 100%; padding: 14px; border: 0; border-radius: 14px; background: #7c4dff; color: #fff; font-size: 17px; font-weight: 900; }
+  </style>
+</head>
+<body>
+  <div class="bar">
+    <a class="btn" href="../../" aria-label="타이틀로">←</a>
+    <div class="prog">
+      <div class="top"><span>⚗️ 조합 도감</span><span id="count">0 / 100</span></div>
+      <div class="track"><div id="bar"></div></div>
+    </div>
+    <button id="hint" class="btn" type="button">💡 힌트</button>
+  </div>
+
+  <div id="board"></div>
+
+  <div class="tools">
+    <input id="search" type="search" placeholder="찾은 것 검색" autocomplete="off">
+    <button id="clear" class="btn" type="button">🧹 정리</button>
+    <button id="reset" class="btn" type="button" aria-label="처음부터">↺</button>
+  </div>
+  <div id="library"></div>
+
+  <div id="toast" hidden></div>
+
+  <div id="done" class="modal" hidden>
+    <div class="panel">
+      <div style="font-size:64px">🏆</div>
+      <h2>100개 모두 발견!</h2>
+      <p>기본 원소 5개에서 시작해 세상의 모든 것을 만들어 냈어요.</p>
+      <button id="done-close" class="go" type="button">계속 놀기</button>
+    </div>
+  </div>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>

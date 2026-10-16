@@ -123,6 +123,18 @@ FPS 사격 연습 튜토리얼. 조준선은 화면 중앙에 고정, 시점을 
 node games/aim-trainer/tools/test-session.mjs   # 투영·판정·점수·시간·과녁 배치 검사
 ```
 
+### ⚗️ 조합 도감
+기본 원소 5개(💧 물 · 🔥 불 · 🟫 흙 · 🌬️ 공기 · ⚡ 에너지)를 겹쳐 새로운 것을 만드는 조합 퍼즐. 만들 수 있는 것은 **정확히 100개**.
+
+- 작업대에서 항목을 끌어 다른 항목 위에 놓으면 조합, 조합이 없으면 흔들리며 떨어짐
+- 아래 도감의 항목을 누르면 작업대로 꺼냄 · 작업대 밖으로 끌면 치움 · 검색 · 정리 · 처음부터
+- 💡 힌트: 지금 가진 것으로 만들 수 있는 조합의 재료를 하나 알려 줌
+- 발견한 것은 기기에 저장, 100개를 모두 찾으면 완료 화면
+
+```
+node games/alchemy/tools/verify-recipes.mjs   # 100개 · 모두 도달 가능 · 재료 쌍 충돌 없음 · 이모지 중복 없음
+```
+
 ## 구조
 
 ```
@@ -183,7 +195,7 @@ games/
    │  └─ controls.js     핸들·페달·기어·키보드 (리프)
    │  (world.js 지도 데이터 — 리프)
    └─ tools/test-physics.mjs   물리·판정 검증
-└─ aim-trainer/
+├─ aim-trainer/
    ├─ index.html
    ├─ src/main.js        루트: 튜토리얼 단계·HUD·감도·결과
    │  ├─ session.js      과녁 배치·명중 판정·점수/시간 기록
@@ -191,6 +203,12 @@ games/
    │  └─ input.js        터치 드래그·FIRE·포인터 잠금 (리프)
    │  (math.js 방향·투영 계산 — 리프)
    └─ tools/test-session.mjs   판정·기록 검증
+└─ alchemy/
+   ├─ index.html
+   ├─ src/main.js        루트: 작업대·도감·진행도·힌트·저장
+   │  ├─ alchemy.js      조합 규칙·발견 목록·힌트 (recipes.js 조합표 — 리프)
+   │  └─ board.js        작업대 토큰 끌기·겹치기 (리프)
+   └─ tools/verify-recipes.mjs  조합표 검증
 ```
 
 각 게임은 자기 폴더 안에서만 import 하며, 공용으로는 `common/` 리프 모듈만 참조합니다 (순환 참조 없음).

@@ -64,4 +64,12 @@ export const GAMES = [
     color: '#2979ff',
     tags: ['FPS 연습', '튜토리얼'],
   },
+  {
+    id: 'alchemy',
+    title: '조합 도감',
+    desc: '물·불·흙·공기·에너지를 겹쳐 새로운 것을 만들어 보세요. 모두 100가지!',
+    icon: '⚗️',
+    color: '#7c4dff',
+    tags: ['조합', '퍼즐', '드래그'],
+  },
 ];
