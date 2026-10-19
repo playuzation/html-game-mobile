@@ -16,6 +16,7 @@
       padding: calc(env(safe-area-inset-top) + 8px) 12px calc(env(safe-area-inset-bottom) + 12px);
     }
     button { font: inherit; cursor: pointer; }
+    body > * { flex-shrink: 0; } /* 화면보다 길면 줄이지 말고 스크롤 */
     .bar { display: flex; align-items: center; gap: 8px; }
     .btn {
       height: 34px; min-width: 34px; padding: 0 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,.15);
@@ -33,6 +34,12 @@
     .switch input:checked { background: #00c853; }
     .switch input:checked::after { left: 21px; }
 
+    #modes { display: flex; gap: 4px; overflow-x: auto; padding: 4px; border-radius: 12px; background: rgba(255,255,255,.08); }
+    #modes button { flex: 1 0 auto; padding: 7px 10px; border: 0; border-radius: 9px; background: none; color: #cfd8dc; font-weight: 800; font-size: 13px; white-space: nowrap; }
+    #modes button.on { background: #00897b; color: #fff; }
+    .listen { display: flex; align-items: center; gap: 14px; }
+    #arp { padding: 10px 14px; border: 0; border-radius: 12px; background: rgba(255,255,255,.12); color: #fff; font-weight: 800; }
+    #arp[hidden] { display: none; }
     .stage { display: flex; flex-direction: column; align-items: center; gap: 10px; }
     #replay {
       width: 120px; height: 120px; border-radius: 50%; border: 0; color: #fff; font-size: 15px; font-weight: 900;
@@ -104,9 +111,19 @@
     </div>
     <label class="switch">UP/DOWN 힌트 <input id="hints" type="checkbox"></label>
   </div>
+  <div id="modes" aria-label="모드">
+    <button type="button" data-mode="single">근음</button>
+    <button type="button" data-mode="maj">메이저</button>
+    <button type="button" data-mode="min">마이너</button>
+    <button type="button" data-mode="maj7">메이저 세븐</button>
+    <button type="button" data-mode="dom7">도미넌트 세븐</button>
+  </div>
 
   <div class="stage">
-    <button id="replay" type="button" aria-label="다시 듣기"><span>🔊</span>다시 듣기</button>
+    <div class="listen">
+      <button id="replay" type="button" aria-label="다시 듣기"><span>🔊</span>다시 듣기</button>
+      <button id="arp" type="button" hidden>🎼 펼쳐 듣기</button>
+    </div>
     <div class="ans">정답 건반<span id="answer">?</span></div>
     <div id="feedback"></div>
   </div>
@@ -129,7 +146,8 @@
       <p class="sub">피아노 88건반 중 한 음이 <b>사각파</b> 소리로 울려요.<br>
         <b>C ~ B 12개 버튼</b> 중 어떤 음인지 맞혀 보세요.<br>
         틀린 버튼은 꺼지고, 힌트가 켜져 있으면 <b>UP / DOWN</b> 으로 알려 줘요<br>
-        (C 가 가장 낮고 B 가 가장 높은 기준).</p>
+        (C 가 가장 낮고 B 가 가장 높은 기준).<br>
+        화음 모드에서는 울린 화음의 <b>구성음을 모두</b> 찾으세요.</p>
       <p class="sub" style="font-size:12px;opacity:.6">🔊 소리를 켜 주세요 (아이폰은 무음 스위치도 확인)</p>
       <button id="start" class="go" type="button">시작</button>
       <a class="link" href="../../">타이틀로</a>

@@ -12,6 +12,15 @@ export const LEVELS = {
   hard: { label: '상', low: 21, high: 108, desc: 'A0 ~ C8 (88건반 전체)' },
 };
 
+// 모드: 근음 하나 또는 화음 (근음에서 위로 쌓는 반음 간격, symbol 은 코드 표기 접미사)
+export const MODES = {
+  single: { label: '근음', symbol: '', intervals: [0] },
+  maj: { label: '메이저', symbol: '', intervals: [0, 4, 7] },
+  min: { label: '마이너', symbol: 'm', intervals: [0, 3, 7] },
+  maj7: { label: '메이저 세븐', symbol: 'maj7', intervals: [0, 4, 7, 11] },
+  dom7: { label: '도미넌트 세븐', symbol: '7', intervals: [0, 4, 7, 10] },
+};
+
 export const pitchClass = (midi) => midi % 12; // 0 = C ... 11 = B
 export const octave = (midi) => Math.floor(midi / 12) - 1;
 export const noteName = (midi) => NAMES[pitchClass(midi)] + octave(midi);

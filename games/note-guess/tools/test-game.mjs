@@ -1,7 +1,7 @@
 // 규칙 검증: 88건반·주파수·난이도 범위·판정·힌트·버튼 비활성 규칙
 // 실행: node games/note-guess/tools/test-game.mjs
 import { NoteGame } from '../src/game.js';
-import { LEVELS, PIANO, freq, noteName, pitchClass } from '../src/notes.js';
+import { LEVELS, MODES, PIANO, NAMES, freq, noteName, pitchClass } from '../src/notes.js';
 
 const res = [];
 const check = (n, ok, d = '') => res.push(`${ok ? '✅' : '❌'} ${n}${d ? ' — ' + d : ''}`);
@@ -62,6 +62,66 @@ for (let ans = 0; ans < 12; ans++)
     if (r.hint !== (ans > pick ? 'up' : 'down')) hintOk = false;
   }
 check('UP/DOWN 힌트 132가지 조합 모두 올바름', hintOk);
+
+// ---------- 화음 모드 ----------
+const want = { maj: 'C E G', min: 'C D# G', maj7: 'C E G B', dom7: 'C E G A#' };
+for (const [mode, tones] of Object.entries(want)) {
+  const t = new NoteGame('easy', () => 0, mode); // 근음 C4
+  check(`${MODES[mode].label}: C 화음 = ${tones}`, t.notes.map((m) => NAMES[m % 12]).join(' ') === tones && noteName(t.midi) === 'C4');
+}
+
+// 처음 모드는 근음 하나
+check('기본 모드 = 근음(음 하나)', new NoteGame('easy').mode === 'single' && new NoteGame('easy').notes.length === 1);
+
+// 구성음을 모두 찾아야 끝남 · 맞힌 구성음/틀린 음 재입력 무시
+const c7 = new NoteGame('easy', () => 0.5, 'dom7'); // F#4 7 = F# A# C# E
+check('F#7 구성음', c7.notes.map((m) => NAMES[m % 12]).join(' ') === 'F# A# C# E', c7.notes.map(noteName).join(' '));
+const s1 = c7.guess(6);
+check('구성음 하나 → 정답이지만 아직 미완료', s1.correct && !s1.complete && !c7.done);
+check('찾은 구성음 다시 누르면 무시', c7.guess(6) === null);
+const w1 = c7.guess(0); // C: 남은 A#(10) C#(1) E(4) → 모두 C 보다 높음
+check('남은 구성음이 모두 높으면 UP', w1.hint === 'up');
+const w2 = c7.guess(3); // D#: 남은 1, 4, 10 → 양쪽
+check('남은 구성음이 양쪽이면 ↕', w2.hint === 'both');
+c7.guess(1);
+c7.guess(4);
+const w3 = c7.guess(11); // B: 남은 A#(10) → 낮음
+check('남은 구성음이 모두 낮으면 DOWN', w3.hint === 'down');
+const fin = c7.guess(10);
+check('마지막 구성음 → 완료, 틀린 적 있으면 한 번에 맞힘 아님', fin.complete && c7.done && c7.solved === 1 && c7.firstTry === 0 && c7.wrong === 3);
+
+// 화음 힌트 전수 검사: 모든 근음·모드·찾은 순서에서 힌트가 남은 음 기준으로 맞는지
+let allOk = true;
+for (const mode of ['maj', 'min', 'maj7', 'dom7'])
+  for (let root = 0; root < 12; root++) {
+    const t = new NoteGame('easy', () => root / 12 + 0.001, mode);
+    const ans = [...t.answers];
+    t.guess(ans[0]); // 첫 구성음 찾아 둠
+    for (let pc = 0; pc < 12; pc++) {
+      if (t.answers.has(pc) || t.tried.has(pc)) continue;
+      const left = ans.filter((a) => !t.found.has(a));
+      const expect = left.some((a) => a > pc) && left.some((a) => a < pc) ? 'both' : left.some((a) => a > pc) ? 'up' : 'down';
+      if (t.guess(pc).hint !== expect) allOk = false;
+    }
+  }
+check('화음 4종 × 근음 12개 힌트 전수 검사', allOk);
+
+// 근음 범위: 화음 윗음이 C8 를 넘지 않음 (상 난이도)
+let topOk = true;
+let rootLow = 999;
+for (const mode of ['maj7', 'dom7', 'maj']) {
+  const t = new NoteGame('hard', Math.random, mode);
+  for (let k = 0; k < 20000; k++) {
+    t.next();
+    if (Math.max(...t.notes) > PIANO.high) topOk = false;
+    rootLow = Math.min(rootLow, t.midi);
+  }
+}
+check('상: 화음 맨 윗음이 C8 이하, 근음은 A0 부터', topOk && rootLow === PIANO.low);
+const easyRoots = new Set();
+const te = new NoteGame('easy', Math.random, 'maj7');
+for (let k = 0; k < 5000; k++) easyRoots.add(te.next());
+check('하: 화음 모드에서도 근음은 C4~B4 12개', easyRoots.size === 12 && Math.min(...easyRoots) === 60 && Math.max(...easyRoots) === 71);
 
 console.log(res.join('\n'));
 if (res.some((l) => l.startsWith('❌'))) process.exit(1);

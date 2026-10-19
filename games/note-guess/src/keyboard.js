@@ -45,9 +45,11 @@ export function buildKeyboard(svg) {
   return keys;
 }
 
+// answer: 정답 건반 하나 또는 화음 구성 건반 배열
 export function paintKeyboard(keys, { low, high }, answer = null) {
+  const ans = new Set([].concat(answer ?? []));
   for (const [m, r] of keys) {
     r.classList.toggle('out', m < low || m > high);
-    r.classList.toggle('ans', m === answer);
+    r.classList.toggle('ans', ans.has(m));
   }
 }
