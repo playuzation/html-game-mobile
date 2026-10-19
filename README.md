@@ -148,6 +148,19 @@ node games/alchemy/tools/verify-recipes.mjs   # 100개 · 모두 도달 가능 �
 node games/bpm-lock/tools/test-game.mjs   # BPM 범위·자리 순환·판정·점수 검사
 ```
 
+### 🎹 음 맞히기
+피아노 88건반(A0~C8) 중 한 음을 **사각파**로 들려주고, **C ~ B 12개 버튼** 중 어떤 음인지 맞히는 청음 퀴즈.
+
+- 틀린 버튼은 정답을 맞힐 때까지 비활성, 다음 문제로 넘어가면 모두 다시 활성
+- **UP/DOWN 힌트**(켜고 끄기 가능): C 가 가장 낮고 B 가 가장 높은 기준으로 정답이 더 높으면 UP, 낮으면 DOWN
+- 난이도: **하** C4~B4 (12건반) · **중** C2~B5 (48건반) · **상** 88건반 전체
+- 정답 후 옥타브까지 표시(예: F#3) + 88건반 그림에 정답 위치 · 출제 범위 밖은 회색
+- 기록: 맞힌 문제 · 한 번에 맞힌 비율 · 연속 정답, 난이도·힌트 설정은 기기에 저장
+
+```
+node games/note-guess/tools/test-game.mjs   # 88건반·주파수·난이도 범위·판정·힌트 132조합·비활성 규칙 검사
+```
+
 ## 구조
 
 ```
@@ -222,13 +235,20 @@ games/
    │  ├─ alchemy.js      조합 규칙·발견 목록·힌트 (recipes.js 조합표 — 리프)
    │  └─ board.js        작업대 토큰 끌기·겹치기 (리프)
    └─ tools/verify-recipes.mjs  조합표 검증
-└─ bpm-lock/
+├─ bpm-lock/
    ├─ index.html
    ├─ src/main.js        루트: 라운드 진행·결과
    │  ├─ metronome.js    Web Audio 메트로놈 (미리 예약 스케줄러)
    │  ├─ visual.js       추·박 표시등 그리기
    │  ├─ lock.js         자물쇠 다이얼 UI ─┐
    │  └─ game.js         규칙·점수·자리 계산 (리프) ←┘
+   └─ tools/test-game.mjs      규칙 검증
+└─ note-guess/
+   ├─ index.html
+   ├─ src/main.js        루트: 문제 진행·버튼 활성/비활성·힌트 토글·난이도
+   │  ├─ game.js         출제·판정·UP/DOWN·기록 ─┐
+   │  ├─ keyboard.js     88건반 그림 ────────────┼─ notes.js 음 이름·주파수·범위 (리프)
+   │  └─ synth.js        사각파 소리 (리프)
    └─ tools/test-game.mjs      규칙 검증
 ```
 

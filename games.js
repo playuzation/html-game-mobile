@@ -80,4 +80,12 @@ export const GAMES = [
     color: '#ffa000',
     tags: ['음악', '청음', '4/4 박자'],
   },
+  {
+    id: 'note-guess',
+    title: '음 맞히기',
+    desc: '피아노 88건반 중 울린 음이 C~B 중 무엇인지 맞히는 청음 퀴즈. UP/DOWN 힌트와 난이도 3단계',
+    icon: '🎹',
+    color: '#5e35b1',
+    tags: ['음악', '청음', '난이도'],
+  },
 ];
