@@ -123,5 +123,16 @@ const te = new NoteGame('easy', Math.random, 'maj7');
 for (let k = 0; k < 5000; k++) easyRoots.add(te.next());
 check('하: 화음 모드에서도 근음은 C4~B4 12개', easyRoots.size === 12 && Math.min(...easyRoots) === 60 && Math.max(...easyRoots) === 71);
 
+// 한 번만 듣기: 틀리면 바로 끝 (놓친 문제로 기록, 정확도에 포함, 연속 끊김)
+const o = new NoteGame('easy', () => 0.5); // F#4
+o.guess(6);
+o.next();
+o.guess((o.answer + 1) % 12);
+o.giveUp();
+check('한 번만: 틀리면 문제 끝 · 이후 입력 무시', o.done && o.guess(o.answer) === null);
+check('한 번만: 놓친 문제 기록 · 정확도 1/2 · 연속 0', o.missed === 1 && o.solved === 1 && o.accuracy === 0.5 && o.streak === 0 && o.bestStreak === 1);
+o.giveUp();
+check('이미 끝난 문제에 giveUp 중복 기록 없음', o.missed === 1);
+
 console.log(res.join('\n'));
 if (res.some((l) => l.startsWith('❌'))) process.exit(1);

@@ -10,6 +10,7 @@ export class NoteGame {
     this.solved = 0; // 맞힌 문제 수
     this.firstTry = 0; // 한 번도 안 틀리고 맞힌 수
     this.wrong = 0; // 오답 총합
+    this.missed = 0; // 한 번만 모드에서 틀려서 넘어간 문제 수
     this.streak = 0; // 연속 한 번에 맞히기
     this.bestStreak = 0;
     this.midi = null; // 근음
@@ -80,7 +81,16 @@ export class NoteGame {
     return { correct: false, complete: false, hint: up && down ? 'both' : up ? 'up' : 'down' };
   }
 
+  // 한 번만 모드: 틀리면 그 문제는 바로 끝 (정답 공개 후 다음 문제)
+  giveUp() {
+    if (this.done) return;
+    this.done = true;
+    this.missed++;
+    this.streak = 0;
+  }
+
   get accuracy() {
-    return this.solved ? this.firstTry / this.solved : null;
+    const total = this.solved + this.missed;
+    return total ? this.firstTry / total : null;
   }
 }

@@ -25,6 +25,9 @@ const store = {
 let level = store.get('level', 'easy');
 let hints = store.get('hints', true);
 let mode = store.get('mode', 'single');
+let once = store.get('once', false); // 한 번만 듣기: 다시 듣기 없음, 틀리면 바로 정답 공개 후 다음 문제
+let heard = false; // 이번 문제를 이미 들려줬는지
+let autoNext = null;
 if (!MODES[mode]) mode = 'single';
 let game = null;
 const keys = buildKeyboard($('piano'));
@@ -49,9 +52,11 @@ function start() {
 
 function newQuestion(advance = true) {
   if (advance) game.next();
+  clearTimeout(autoNext);
+  heard = false;
   pads().forEach((p) => {
     p.disabled = false;
-    p.classList.remove('wrong', 'right');
+    p.classList.remove('wrong', 'right', 'reveal');
     p.querySelector('.hint').textContent = '';
   });
   $('next').hidden = true;
@@ -63,6 +68,9 @@ function newQuestion(advance = true) {
 }
 
 function play(arpeggio = false) {
+  if (once && heard) return; // 한 번만 듣기: 첫 소리 뒤로는 다시 듣기 불가
+  heard = true;
+  listenButtons();
   synth.play(game.notes.map(freq), arpeggio ? { gap: 0.45, dur: 2.2 } : {});
   const b = $('replay');
   b.classList.remove('ping');
@@ -86,8 +94,20 @@ function pick(pad) {
     $('answer').textContent = answerText();
     paintKeyboard(keys, LEVELS[level], game.notes);
     say(game.tried.size === 0 ? '🎉 한 번에 정답!' : `⭕ 정답! (${game.tried.size}번 틀림)`, 'ok');
-    $('next').hidden = false;
+    finish(1200);
     if (navigator.vibrate) navigator.vibrate(25);
+  } else if (once) {
+    // 한 번만 듣기: 틀리면 그 자리에서 정답 공개 후 다음 문제로
+    game.giveUp();
+    pad.classList.add('wrong');
+    pads().forEach((p) => {
+      p.disabled = true;
+      if (game.answers.has(Number(p.dataset.pc)) && !p.classList.contains('right')) p.classList.add('reveal');
+    });
+    $('answer').textContent = answerText();
+    paintKeyboard(keys, LEVELS[level], game.notes);
+    say(`❌ 틀렸어요 — 정답은 ${NAMES[game.answer]}${mode === 'single' ? '' : ' ' + MODES[mode].label}`, 'no');
+    finish(2200);
   } else {
     pad.disabled = true;
     pad.classList.add('wrong');
@@ -106,6 +126,16 @@ function pick(pad) {
     play();
   }
   stats();
+}
+
+// 문제 끝: 다음 버튼을 보이고, 한 번만 듣기면 잠시 뒤 자동으로 다음 문제
+function finish(ms) {
+  $('next').hidden = false;
+  if (once) autoNext = setTimeout(() => newQuestion(), ms);
+}
+
+function listenButtons() {
+  $('replay').disabled = $('arp').disabled = once && heard;
 }
 
 // 정답 표시: 근음은 'F#3', 화음은 'C#7 · 근음 C#4 (C# F G# B)'
@@ -134,6 +164,8 @@ function renderSettings() {
   $('arp').hidden = mode === 'single';
   $('range').textContent = LEVELS[level].desc;
   $('hints').checked = hints;
+  $('once').checked = once;
+  listenButtons();
   document.body.classList.toggle('nohint', !hints);
 }
 $('levels').addEventListener('click', (e) => {
@@ -164,6 +196,13 @@ $('hints').addEventListener('change', (e) => {
   store.set('hints', hints);
   renderSettings();
   if (!hints) pads().forEach((p) => (p.querySelector('.hint').textContent = ''));
+});
+
+$('once').addEventListener('change', (e) => {
+  once = e.target.checked;
+  store.set('once', once);
+  renderSettings();
+  if (game) newQuestion(); // 설정이 바뀌면 새 문제부터
 });
 
 $('pads').addEventListener('click', (e) => {
