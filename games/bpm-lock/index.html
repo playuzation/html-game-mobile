@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#1b1f2a">
+  <title>BPM Lock</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body { height: 100%; overflow: hidden; }
+    body {
+      display: flex; flex-direction: column; height: 100dvh; color: #fff;
+      background: radial-gradient(circle at 50% 20%, #2c3446, #1b1f2a 70%);
+      font-family: system-ui, -apple-system, "Apple SD Gothic Neo", sans-serif;
+      user-select: none; -webkit-user-select: none; touch-action: manipulation;
+      padding: calc(env(safe-area-inset-top) + 8px) 12px calc(env(safe-area-inset-bottom) + 12px);
+    }
+    button { font: inherit; cursor: pointer; }
+    .bar { display: flex; align-items: center; gap: 8px; }
+    .btn {
+      height: 34px; min-width: 34px; padding: 0 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,.15);
+      background: rgba(255,255,255,.1); color: #fff; font-size: 13px; font-weight: 700; display: grid; place-items: center; text-decoration: none;
+    }
+    .info { flex: 1; text-align: center; font-size: 13px; font-weight: 800; }
+    #tries { color: #ffd54a; letter-spacing: 2px; margin-left: 6px; }
+    #total { color: #69f0ae; margin-left: 6px; }
+
+    .stage { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: space-evenly; gap: 8px; }
+    #metro { width: min(62vw, 230px); height: min(26vh, 220px); }
+    #beats { display: flex; gap: 12px; }
+    #beats i {
+      width: 22px; height: 22px; border-radius: 50%; background: rgba(255,255,255,.12);
+      display: grid; place-items: center; font-style: normal; font-size: 11px; font-weight: 900; color: rgba(255,255,255,.4);
+      transition: background .06s, transform .06s;
+    }
+    #beats i:first-child { width: 28px; height: 28px; }
+    #beats i.on { background: #ffd54a; color: #3a2a00; transform: scale(1.25); }
+    #beats i:first-child.on { background: #ff5252; color: #fff; }
+    .sig { font-size: 12px; opacity: .6; }
+
+    /* 자물쇠 */
+    #lockbox { position: relative; padding-top: 52px; margin-top: 14px; }
+    #lockbox::before {
+      content: ''; position: absolute; left: 50%; top: 0; width: 120px; height: 90px; transform: translateX(-50%);
+      border: 14px solid #b0bec5; border-bottom: 0; border-radius: 60px 60px 0 0; transition: transform .4s;
+    }
+    #lockbox.open::before { transform: translate(-30%, -16px) rotate(-12deg); border-color: #69f0ae; }
+    #lockbox.shake { animation: shake .35s; }
+    @keyframes shake { 25% { translate: -8px 0; } 75% { translate: 8px 0; } }
+    .body {
+      position: relative; padding: 14px 16px 16px; border-radius: 18px; background: linear-gradient(#ffca28, #ffa000);
+      box-shadow: 0 8px 0 #b26a00, 0 14px 24px rgba(0,0,0,.4);
+    }
+    #lockbox.open .body { background: linear-gradient(#69f0ae, #2e7d32); box-shadow: 0 8px 0 #1b5e20, 0 14px 24px rgba(0,0,0,.4); }
+    #lockbox.fail .body { filter: grayscale(.6); }
+    #dial { display: flex; gap: 10px; justify-content: center; }
+    #dial.disabled button { opacity: .35; pointer-events: none; }
+    .wheel { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .wheel button {
+      width: 58px; height: 40px; border: 0; border-radius: 10px; background: #3e2723; color: #ffe082;
+      font-size: 18px; touch-action: manipulation; box-shadow: 0 3px 0 #1b0f0b;
+    }
+    .wheel button:active { transform: translateY(2px); box-shadow: 0 1px 0 #1b0f0b; }
+    .win {
+      width: 58px; height: 74px; overflow: hidden; border-radius: 10px; background: #fff;
+      box-shadow: inset 0 8px 10px rgba(0,0,0,.25), inset 0 -8px 10px rgba(0,0,0,.25);
+    }
+    .roll { display: flex; flex-direction: column; transform: translateY(-74px); }
+    .roll span {
+      height: 74px; display: grid; place-items: center; font-size: 46px; font-weight: 900; color: #263238;
+      font-variant-numeric: tabular-nums;
+    }
+    .roll .prev, .roll .next { opacity: .35; }
+    .roll.from-down { animation: fromDown .18s ease-out; }
+    .roll.from-up { animation: fromUp .18s ease-out; }
+    @keyframes fromDown { from { transform: translateY(-148px); } }
+    @keyframes fromUp { from { transform: translateY(0); } }
+    .unit { text-align: center; font-size: 12px; font-weight: 900; color: #5d3a00; margin-top: 8px; letter-spacing: 2px; }
+    .answer { text-align: center; font-size: 13px; opacity: .8; }
+    #answer { font-weight: 900; color: #ffd54a; }
+
+    #feedback { min-height: 22px; text-align: center; font-size: 15px; font-weight: 800; }
+    #feedback.up, #feedback.down { color: #ffd54a; }
+    #feedback.ok { color: #69f0ae; }
+    #feedback.warn { color: #ff8a80; }
+    .acts { display: flex; gap: 8px; width: 100%; max-width: 400px; }
+    .go {
+      flex: 1; padding: 15px; border: 0; border-radius: 14px; background: #2979ff; color: #fff;
+      font-size: 17px; font-weight: 900; box-shadow: 0 4px 0 #1c54b2;
+    }
+    .go[hidden] { display: none; }
+    #mute { flex: 0 0 auto; background: rgba(255,255,255,.12); box-shadow: none; font-size: 14px; }
+    /* 키가 작은 화면(아이폰 SE 등): 메트로놈·자물쇠를 줄인다 */
+    @media (max-height: 720px) {
+      #metro { height: 17vh; }
+      #beats i { width: 18px; height: 18px; font-size: 10px; }
+      #beats i:first-child { width: 22px; height: 22px; }
+      #lockbox { padding-top: 34px; margin-top: 8px; }
+      #lockbox::before { width: 92px; height: 64px; border-width: 11px; }
+      .body { padding: 10px 12px 10px; }
+      .wheel { gap: 4px; }
+      .wheel button { width: 50px; height: 32px; font-size: 15px; }
+      .win { width: 50px; height: 56px; }
+      .roll { transform: translateY(-56px); }
+      .roll span { height: 56px; font-size: 36px; }
+      @keyframes fromDown { from { transform: translateY(-112px); } }
+      .unit { margin-top: 4px; }
+      .go { padding: 12px; font-size: 16px; }
+    }
+    .modal { position: fixed; inset: 0; z-index: 5; display: flex; align-items: center; justify-content: center; background: rgba(10,12,20,.88); padding: 16px; }
+    .modal[hidden] { display: none; }
+    .panel { width: 100%; max-width: 400px; text-align: center; }
+    .panel h1 { font-size: 30px; font-weight: 900; }
+    .sub { opacity: .85; font-size: 14px; line-height: 1.7; margin-top: 8px; }
+    .link { display: block; margin-top: 12px; color: #82b1ff; font-weight: 800; text-decoration: none; }
+    #res-total { font-size: 60px; font-weight: 900; color: #69f0ae; }
+    table { width: 100%; margin-top: 10px; border-collapse: collapse; font-size: 14px; }
+    th, td { padding: 7px 4px; border-bottom: 1px solid rgba(255,255,255,.1); }
+    th { font-size: 12px; opacity: .7; }
+  </style>
+</head>
+<body>
+  <div class="bar">
+    <a class="btn" href="../../" aria-label="타이틀로">←</a>
+    <div class="info"><span id="round">라운드 -</span><span id="tries"></span><span id="total"></span></div>
+    <span class="btn" style="visibility:hidden">←</span>
+  </div>
+
+  <div class="stage">
+    <canvas id="metro" aria-label="메트로놈"></canvas>
+    <div id="beats" aria-label="4/4 박자"><i>1</i><i>2</i><i>3</i><i>4</i></div>
+    <div class="sig">4/4 박자 · 빨간 불이 1박</div>
+
+    <div id="lockbox">
+      <div class="body">
+        <div id="dial"></div>
+        <div class="unit">B P M</div>
+      </div>
+    </div>
+    <div class="answer">정답: <span id="answer">???</span></div>
+    <div id="feedback"></div>
+
+    <div class="acts">
+      <button id="mute" class="go" type="button">⏸ 멈춤</button>
+      <button id="submit" class="go" type="button">🔓 열기</button>
+      <button id="next" class="go" type="button" hidden>다음 라운드 ▶</button>
+    </div>
+  </div>
+
+  <div id="intro" class="modal">
+    <div class="panel">
+      <div style="font-size:56px">🥁🔒</div>
+      <h1>BPM LOCK</h1>
+      <p class="sub">메트로놈 소리를 듣고 빠르기(BPM)를 맞춰 자물쇠를 여세요.<br>
+        BPM 은 <b>30 ~ 300</b> 사이에서 무작위, 박자는 <b>4/4</b>.<br>
+        자리마다 ▲▼ 로 숫자를 돌린 뒤 <b>열기</b>!<br>
+        라운드마다 기회 3번, ±2 이내면 정답 · 총 5라운드</p>
+      <p class="sub" id="start-best"></p>
+      <p class="sub" style="font-size:12px;opacity:.6">🔊 소리를 켜 주세요 (아이폰은 무음 스위치도 확인)</p>
+      <button id="start" class="go" type="button" style="width:100%;margin-top:14px">시작</button>
+      <a class="link" href="../../">타이틀로</a>
+    </div>
+  </div>
+
+  <div id="end" class="modal" hidden>
+    <div class="panel">
+      <p class="sub">총점 (500점 만점)</p>
+      <div id="res-total"></div>
+      <table><thead><tr><th>R</th><th>정답</th><th>내 입력</th><th>점수</th></tr></thead><tbody id="res-rows"></tbody></table>
+      <p class="sub" id="res-best"></p>
+      <button id="again" class="go" type="button" style="width:100%;margin-top:14px">다시 하기</button>
+      <a class="link" href="../../">타이틀로</a>
+    </div>
+  </div>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>

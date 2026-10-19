@@ -135,6 +135,19 @@ node games/aim-trainer/tools/test-session.mjs   # 투영·판정·점수·시간
 node games/alchemy/tools/verify-recipes.mjs   # 100개 · 모두 도달 가능 · 재료 쌍 충돌 없음 · 이모지 중복 없음
 ```
 
+### 🥁 BPM LOCK
+메트로놈 소리를 듣고 빠르기를 맞혀 자물쇠를 여는 청음 게임.
+
+- 시작하면 **30~300 BPM** 중 무작위 빠르기로 **4/4 박자** 메트로놈이 울림 (1박 강세 · 높은 소리)
+- 시각화: 박마다 좌우로 흔들리는 메트로놈 추 + 1~4박 표시등 (1박은 빨간색) — 오디오 시계에 맞춰 동기화
+- 자물쇠 다이얼: 백·십·일의 자리를 각각 ▲▼ 로 한 칸씩 돌림(0↔9 순환) → **열기**
+- 라운드마다 기회 3번, 틀리면 ⬆️ 더 빨라요 / ⬇️ 더 느려요 + 가까운 정도 · ±2 이내면 정답
+- 점수: 정확도(오차율 25% 이상 0점) × 시도 배율(1 / 0.7 / 0.4), 5라운드 500점 만점, 최고 점수 저장
+
+```
+node games/bpm-lock/tools/test-game.mjs   # BPM 범위·자리 순환·판정·점수 검사
+```
+
 ## 구조
 
 ```
@@ -203,12 +216,20 @@ games/
    │  └─ input.js        터치 드래그·FIRE·포인터 잠금 (리프)
    │  (math.js 방향·투영 계산 — 리프)
    └─ tools/test-session.mjs   판정·기록 검증
-└─ alchemy/
+├─ alchemy/
    ├─ index.html
    ├─ src/main.js        루트: 작업대·도감·진행도·힌트·저장
    │  ├─ alchemy.js      조합 규칙·발견 목록·힌트 (recipes.js 조합표 — 리프)
    │  └─ board.js        작업대 토큰 끌기·겹치기 (리프)
    └─ tools/verify-recipes.mjs  조합표 검증
+└─ bpm-lock/
+   ├─ index.html
+   ├─ src/main.js        루트: 라운드 진행·결과
+   │  ├─ metronome.js    Web Audio 메트로놈 (미리 예약 스케줄러)
+   │  ├─ visual.js       추·박 표시등 그리기
+   │  ├─ lock.js         자물쇠 다이얼 UI ─┐
+   │  └─ game.js         규칙·점수·자리 계산 (리프) ←┘
+   └─ tools/test-game.mjs      규칙 검증
 ```
 
 각 게임은 자기 폴더 안에서만 import 하며, 공용으로는 `common/` 리프 모듈만 참조합니다 (순환 참조 없음).

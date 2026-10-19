@@ -72,4 +72,12 @@ export const GAMES = [
     color: '#7c4dff',
     tags: ['조합', '퍼즐', '드래그'],
   },
+  {
+    id: 'bpm-lock',
+    title: 'BPM LOCK',
+    desc: '메트로놈 소리를 듣고 빠르기(30~300 BPM)를 맞혀 자물쇠를 여는 리듬 감각 게임',
+    icon: '🥁',
+    color: '#ffa000',
+    tags: ['음악', '청음', '4/4 박자'],
+  },
 ];
