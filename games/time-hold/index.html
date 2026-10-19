@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#14181f">
+  <title>Time Hold</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body { height: 100%; }
+    body {
+      min-height: 100dvh; display: flex; flex-direction: column; gap: 14px; color: #fff;
+      background: radial-gradient(circle at 50% 0%, #1f3b3a, #14181f 70%);
+      font-family: system-ui, -apple-system, "Apple SD Gothic Neo", sans-serif;
+      user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; touch-action: manipulation;
+      padding: calc(env(safe-area-inset-top) + 8px) 14px calc(env(safe-area-inset-bottom) + 14px);
+    }
+    body > * { flex-shrink: 0; }
+    button { font: inherit; cursor: pointer; }
+    .bar { display: flex; align-items: center; gap: 8px; }
+    .btn {
+      height: 34px; min-width: 34px; padding: 0 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,.15);
+      background: rgba(255,255,255,.1); color: #fff; font-size: 13px; font-weight: 700; display: grid; place-items: center; text-decoration: none;
+    }
+    .bar h1 { flex: 1; text-align: center; font-size: 17px; font-weight: 900; }
+    .stats { display: flex; justify-content: space-around; font-size: 12px; opacity: .85; text-align: center; }
+    .stats b { display: block; font-size: 17px; }
+
+    #listen { align-self: center; padding: 12px 22px; border: 0; border-radius: 14px; background: #00897b; color: #fff; font-size: 16px; font-weight: 900; box-shadow: 0 4px 0 #00574b; }
+    #listen:disabled { opacity: .4; box-shadow: none; transform: translateY(3px); }
+    #msg { min-height: 22px; text-align: center; font-size: 15px; font-weight: 700; opacity: .9; }
+
+    .stage { flex: 1 0 auto; display: grid; place-items: center; min-height: 250px; }
+    #hold {
+      position: relative; width: 220px; height: 220px; border-radius: 50%; border: 0; color: #fff; font-size: 20px; font-weight: 900;
+      background: radial-gradient(circle at 35% 30%, #4dd0e1, #00838f); box-shadow: 0 10px 0 #005662, 0 16px 30px rgba(0,0,0,.45);
+      touch-action: none;
+    }
+    #hold span { display: block; font-size: 52px; line-height: 1.2; }
+    #hold:disabled { filter: grayscale(.8) brightness(.6); cursor: default; }
+    body[data-state="holding"] #hold { transform: translateY(8px); box-shadow: 0 2px 0 #005662; animation: glow 1s infinite; }
+    body[data-state="listening"] #hold { animation: glow .8s infinite; }
+    @keyframes glow { 0% { outline: 0 solid rgba(77,208,225,.6); } 100% { outline: 34px solid rgba(77,208,225,0); } }
+
+    #result { border-radius: 16px; padding: 14px; text-align: center; background: rgba(255,255,255,.07); }
+    #result[hidden] { display: none; }
+    #verdict { font-size: 44px; font-weight: 900; letter-spacing: 3px; }
+    #result.pass #verdict { color: #69f0ae; }
+    #result.fail #verdict { color: #ff5252; }
+    .nums { display: flex; justify-content: space-around; margin-top: 6px; font-size: 12px; opacity: .9; }
+    .nums b { display: block; font-size: 18px; }
+    #r-note { margin-top: 8px; font-size: 14px; font-weight: 700; opacity: .85; }
+    .meter { position: relative; height: 14px; margin: 14px 4px 4px; border-radius: 7px; background: rgba(255,255,255,.12); }
+    #zone { position: absolute; top: 0; bottom: 0; background: #00c853; border-radius: 3px; }
+    #marker { position: absolute; top: -5px; width: 4px; height: 24px; margin-left: -2px; border-radius: 2px; background: #ffd54a; transition: left .4s; }
+    .scale { display: flex; justify-content: space-between; font-size: 10px; opacity: .55; }
+    #next { width: 100%; padding: 14px; border: 0; border-radius: 14px; background: #2979ff; color: #fff; font-size: 17px; font-weight: 900; box-shadow: 0 4px 0 #1c54b2; }
+    #next[hidden] { display: none; }
+
+    .modal { position: fixed; inset: 0; z-index: 5; display: flex; align-items: center; justify-content: center; background: rgba(10,12,20,.88); padding: 16px; }
+    .modal[hidden] { display: none; }
+    .panel { width: 100%; max-width: 400px; text-align: center; }
+    .panel h2 { font-size: 28px; font-weight: 900; }
+    .sub { opacity: .85; font-size: 14px; line-height: 1.7; margin-top: 8px; }
+    .go { margin-top: 16px; width: 100%; padding: 15px; border: 0; border-radius: 14px; background: #00897b; color: #fff; font-size: 18px; font-weight: 900; }
+    .link { display: block; margin-top: 12px; color: #80cbc4; font-weight: 800; text-decoration: none; }
+  </style>
+</head>
+<body data-state="ready">
+  <div class="bar">
+    <a class="btn" href="../../" aria-label="타이틀로">←</a>
+    <h1>⏱️ 시간 꾹 누르기</h1>
+    <span class="btn" style="visibility:hidden">←</span>
+  </div>
+
+  <div class="stats">
+    <div><b id="s-pass">0 / 0</b>성공 / 시도</div>
+    <div><b id="s-streak">0</b>연속 성공</div>
+    <div><b id="s-best">-</b>최소 오차</div>
+  </div>
+
+  <button id="listen" type="button">🔊 삐 소리 듣기</button>
+  <div id="msg"></div>
+
+  <div class="stage">
+    <button id="hold" type="button" disabled><span>👆</span>꾹 누르기</button>
+  </div>
+
+  <div id="result" hidden>
+    <div id="verdict">PASS</div>
+    <div class="nums">
+      <div><b id="r-target">-</b>삐 소리</div>
+      <div><b id="r-held">-</b>누른 시간</div>
+      <div><b id="r-diff">-</b>오차</div>
+    </div>
+    <div class="meter"><div id="zone"></div><div id="marker"></div></div>
+    <div class="scale"><span>-1초 (짧게)</span><span>±0.1초</span><span>+1초 (길게)</span></div>
+    <div id="r-note"></div>
+  </div>
+  <button id="next" type="button" hidden>다음 문제 ▶</button>
+
+  <div id="intro" class="modal">
+    <div class="panel">
+      <div style="font-size:56px">⏱️👆</div>
+      <h2>시간 꾹 누르기</h2>
+      <p class="sub"><b>1 ~ 10초</b> 사이 무작위 길이의 <b>삐 소리</b>가 울려요.<br>
+        소리가 끝나면 버튼을 <b>꾹 눌러</b> 같은 시간만큼 누르고 떼세요.<br>
+        차이가 <b>±0.1초</b> 안이면 <b>PASS</b>, 아니면 <b>FAIL</b>!<br>
+        누르는 동안에는 시간이 보이지 않아요.</p>
+      <p class="sub" style="font-size:12px;opacity:.6">🔊 소리를 켜 주세요 (아이폰은 무음 스위치도 확인)</p>
+      <button id="start" class="go" type="button">시작</button>
+      <a class="link" href="../../">타이틀로</a>
+    </div>
+  </div>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>

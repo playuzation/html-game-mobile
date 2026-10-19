@@ -165,6 +165,17 @@ node games/bpm-lock/tools/test-game.mjs   # BPM 범위·자리 순환·판정·�
 node games/note-guess/tools/test-game.mjs   # 88건반·주파수·난이도 범위·판정·힌트·비활성 규칙·화음 구성음/힌트 전수 검사
 ```
 
+### ⏱️ 시간 꾹 누르기
+**1 ~ 10초**(0.1초 단위) 중 무작위 길이의 삐 소리를 듣고, 버튼을 **꾹 눌러 같은 시간만큼** 누르는 타이밍 게임.
+
+- 차이가 **±0.1초** 이내면 **PASS**, 아니면 **FAIL** · 누르는 동안 시간은 숨김(낮은 소리로 누르는 중임만 알림)
+- 결과: 목표·누른 시간·오차(+길게 / -짧게) + 오차 막대(초록 = ±0.1초 구간)
+- 누르기 전에는 다시 듣기 가능 · 기록: 성공/시도 · 연속 성공 · 최소 오차
+
+```
+node games/time-hold/tools/test-rules.mjs   # 목표 범위·0.1초 단위·±0.1초 경계 판정·기록 검사
+```
+
 ## 구조
 
 ```
@@ -247,13 +258,19 @@ games/
    │  ├─ lock.js         자물쇠 다이얼 UI ─┐
    │  └─ game.js         규칙·점수·자리 계산 (리프) ←┘
    └─ tools/test-game.mjs      규칙 검증
-└─ note-guess/
+├─ note-guess/
    ├─ index.html
    ├─ src/main.js        루트: 문제 진행·버튼 활성/비활성·힌트 토글·난이도
    │  ├─ game.js         출제·판정·UP/DOWN·기록 ─┐
    │  ├─ keyboard.js     88건반 그림 ────────────┼─ notes.js 음 이름·주파수·범위 (리프)
    │  └─ synth.js        사각파 소리 (리프)
    └─ tools/test-game.mjs      규칙 검증
+└─ time-hold/
+   ├─ index.html
+   ├─ src/main.js        루트: 듣기 → 꾹 누르기 → 판정 화면
+   │  ├─ rules.js        목표 출제·±0.1초 판정·기록 (리프)
+   │  └─ beep.js         삐 소리 (리프)
+   └─ tools/test-rules.mjs     규칙 검증
 ```
 
 각 게임은 자기 폴더 안에서만 import 하며, 공용으로는 `common/` 리프 모듈만 참조합니다 (순환 참조 없음).

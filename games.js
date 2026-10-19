@@ -88,4 +88,12 @@ export const GAMES = [
     color: '#5e35b1',
     tags: ['음악', '청음', '난이도'],
   },
+  {
+    id: 'time-hold',
+    title: '시간 꾹 누르기',
+    desc: '1~10초 삐 소리를 듣고 같은 시간만큼 버튼을 꾹! ±0.1초 안이면 PASS',
+    icon: '⏱️',
+    color: '#00897b',
+    tags: ['타이밍', '감각', '원버튼'],
+  },
 ];
